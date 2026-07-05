@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Jumia — Boîte Mystère</title>
+<style>
+@font-face{font-family:'HelveticaDisplay';src:url('https://raw.githubusercontent.com/Madzack69/Fonts/main/helvetica-compressed-5871d14b6903a.otf') format('opentype');font-weight:900;font-display:swap;}
+@font-face{font-family:'HelveticaText';src:url('https://raw.githubusercontent.com/Madzack69/Fonts/main/Helvetica-Bold.ttf') format('truetype');font-weight:700;font-display:swap;}
+@font-face{font-family:'HelveticaText';src:url('https://raw.githubusercontent.com/Madzack69/Fonts/main/Helvetica.ttf') format('truetype');font-weight:500;font-display:swap;}
+
+:root{
+  --bg:      #F1F1F2;
+  --card:    #ffffff;
+  --border:  #E4E4E6;
+  --dark:    #403b3b;
+  --grey:    #777777;
+  --orange:  #ff9900;
+  --orangeD: #e68800;
+  --yellow:  #ffba00;
+  --red:     #ec2326;
+  --green:   #20ac76;
+  --tintWarm:#fff8ee;
+  --H1: 'HelveticaDisplay','Arial Black',Arial,sans-serif;
+  --H2: 'HelveticaText','Arial',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{width:100%;min-height:100%;background:var(--bg);}
+body{
+  display:flex;justify-content:center;
+  font-family:var(--H2);color:var(--dark);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+}
+#app{
+  width:100%;max-width:480px;min-height:100vh;
+  display:flex;flex-direction:column;
+  background:var(--bg);
+  animation:fadeIn .25s ease;
+}
+
+@keyframes fadeIn{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{transform:scale(1)}35%{transform:scale(1.12) rotate(-2deg)}70%{transform:scale(.97) rotate(1.5deg)}100%{transform:scale(1)}}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes ctaBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes dotPulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes wipeIn{0%{transform:scaleY(0)}45%{transform:scaleY(1)}55%{transform:scaleY(1)}100%{transform:scaleY(0)}}
+
+/* ── Orange wipe transition on play ── */
+#play-transition{
+  position:fixed;inset:0;background:var(--orange);z-index:9999;
+  pointer-events:none;transform:scaleY(0);transform-origin:bottom;
+}
+#play-transition.go{animation:wipeIn .8s cubic-bezier(.76,0,.24,1) forwards;}
+
+/* ── Header ── */
+.hd{
+  flex:0 0 auto;background:var(--orange);
+  padding:clamp(18px,4.5vw,24px) clamp(20px,5vw,28px) clamp(14px,3.5vw,18px);
+  position:relative;overflow:hidden;
+}
+.hd-star{
+  position:absolute;right:-22px;top:-22px;width:clamp(96px,26vw,120px);height:auto;
+  opacity:.28;pointer-events:none;
+}
+.hd-eyebrow{
+  font-size:clamp(9px,2.3vw,10px);font-weight:700;letter-spacing:.08em;
+  color:rgba(255,255,255,.86);font-family:var(--H2);text-transform:uppercase;margin-bottom:6px;
+}
+.hd-title{
+  font-size:clamp(34px,10vw,46px);font-weight:900;color:#ffffff;line-height:.88;
+  font-family:var(--H1);letter-spacing:-.02em;text-transform:uppercase;
+}
+.hd-title em{
+  display:block;font-style:normal;font-size:.62em;
+  color:rgba(255,255,255,.55);letter-spacing:.02em;margin-top:2px;
+}
+.hd-sub{
+  margin-top:10px;font-size:clamp(12px,3.1vw,14px);color:rgba(255,255,255,.85);
+  font-family:var(--H2);font-weight:500;line-height:1.45;
+}
+.hd-sub b{color:#fff;font-weight:700;}
+
+/* ── Stats row ── */
+.stats-row{display:flex;gap:10px;padding:clamp(10px,2.5vw,12px) clamp(16px,4vw,22px) 0;}
+.stat{
+  flex:1;background:var(--card);border-radius:12px;border:1px solid var(--border);
+  padding:clamp(12px,3vw,16px) 8px clamp(10px,2.6vw,13px);text-align:center;
+}
+.stat-val{
+  font-size:clamp(16px,4.8vw,22px);font-weight:900;color:var(--dark);
+  font-family:var(--H1);line-height:1;letter-spacing:-.01em;font-variant-numeric:tabular-nums;
+}
+.stat-val.hi{color:var(--orange);}
+.stat-val.danger{color:var(--red);}
+.stat-lbl{
+  font-size:clamp(9px,2.3vw,10px);font-weight:700;color:#6a6a6a;font-family:var(--H2);
+  text-transform:uppercase;letter-spacing:.05em;margin-top:6px;
+}
+.stat-lbl .live-dot{
+  display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--orange);
+  margin-right:4px;vertical-align:1px;animation:dotPulse 1.4s ease infinite;
+}
+
+/* ── Game card ── */
+.game-card{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  margin:clamp(14px,3.5vw,18px) clamp(16px,4vw,22px) 0;
+  padding:clamp(14px,3.5vw,18px);
+}
+.game-hint{
+  font-size:clamp(11px,2.9vw,12.5px);font-weight:600;color:var(--grey);
+  font-family:var(--H2);text-align:center;margin-bottom:12px;letter-spacing:.03em;
+}
+.game-hint b{color:var(--orange);font-weight:700;}
+.boxes{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.box{
+  aspect-ratio:1/1;border:1.5px solid var(--border);border-radius:14px;
+  background:var(--tintWarm);cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  transition:transform .12s,border-color .15s,background .15s;
+  font-family:var(--H1);touch-action:manipulation;
+}
+.box:hover:not(:disabled){border-color:var(--orange);transform:translateY(-3px);}
+.box:active:not(:disabled){transform:scale(.97);}
+.box:disabled{cursor:default;}
+.box.dimmed{opacity:.4;background:var(--bg);}
+.box.chosen{background:#ffffff;border-color:var(--orange);border-width:2px;animation:pop .45s ease;}
+.box.chosen .box-lbl{color:var(--orangeD);}
+.box img{width:62%;height:62%;object-fit:contain;pointer-events:none;-webkit-user-drag:none;}
+.box-lbl{
+  font-size:clamp(11px,2.9vw,13px);font-weight:900;color:var(--dark);
+  text-transform:uppercase;letter-spacing:.04em;
+}
+.played-note{
+  display:none;margin-top:12px;text-align:center;
+  font-size:clamp(10px,2.6vw,12px);
+  color:var(--grey);font-family:var(--H2);font-weight:600;line-height:1.5;
+}
+
+/* ── Reveal / voucher card ── */
+.reveal{display:none;margin:clamp(14px,3.5vw,18px) clamp(16px,4vw,22px) 0;}
+.reveal.show{display:block;animation:rise .4s ease;}
+.rv-voucher{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:clamp(16px,4vw,20px);text-align:center;
+}
+.rv-eyebrow{
+  font-size:clamp(9px,2.4vw,11px);font-weight:700;letter-spacing:.08em;color:var(--grey);
+  font-family:var(--H2);text-transform:uppercase;margin-bottom:8px;
+}
+.rv-pct{
+  font-size:clamp(48px,14vw,68px);font-weight:900;color:var(--orange);
+  font-family:var(--H1);line-height:.88;letter-spacing:-.02em;text-transform:uppercase;
+}
+.rv-pct.freeship{font-size:clamp(30px,9vw,42px);color:var(--green);}
+.rv-label{
+  font-size:clamp(13px,3.5vw,16px);font-weight:700;color:var(--grey);
+  font-family:var(--H2);margin-top:6px;
+}
+.rv-code{
+  display:inline-block;background:var(--tintWarm);border:2px dashed var(--orange);
+  border-radius:8px;padding:6px 18px;font-size:clamp(14px,3.8vw,17px);font-weight:900;
+  color:var(--dark);font-family:var(--H1);letter-spacing:.1em;margin-top:12px;
+}
+.rv-code .masked{filter:blur(5px);user-select:none;-webkit-user-select:none;}
+.rv-lock{
+  font-size:clamp(10px,2.6vw,12px);color:var(--grey);font-family:var(--H2);
+  font-weight:600;margin-top:8px;line-height:1.5;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.lock-ico{
+  height:clamp(20px,5.5vw,26px);width:auto;flex-shrink:0;
+  mix-blend-mode:multiply; /* fond blanc de l'image invisible sur carte blanche */
+}
+.rv-expiry{
+  font-size:clamp(10px,2.6vw,12px);font-weight:700;color:var(--orangeD);
+  font-family:var(--H2);margin-top:6px;font-variant-numeric:tabular-nums;
+}
+
+/* ── Claim / CTA card ── */
+.claim-card{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  margin-top:10px;padding:clamp(14px,3.5vw,18px);
+}
+.btn-claim{
+  display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
+  background:var(--orange);color:#ffffff;border:none;border-radius:12px;
+  padding:clamp(16px,4.5vw,20px);font-size:clamp(16px,4.5vw,19px);font-weight:900;
+  cursor:pointer;font-family:var(--H1);text-transform:uppercase;letter-spacing:.04em;
+  box-shadow:0 4px 0 var(--orangeD),0 6px 20px rgba(255,153,0,.25);
+  animation:ctaBounce 2s ease-in-out infinite;
+  transition:transform .1s,box-shadow .1s;text-decoration:none;
+}
+.btn-claim:active{transform:translateY(4px);box-shadow:0 0 0 var(--orangeD);animation:none;}
+.qr-row{
+  display:flex;align-items:center;gap:14px;margin-top:14px;
+  background:var(--tintWarm);border:1.5px solid rgba(255,153,0,.35);
+  border-radius:12px;padding:clamp(10px,2.6vw,13px);
+}
+.qr-row img{
+  width:clamp(76px,20vw,92px);height:clamp(76px,20vw,92px);
+  border-radius:8px;border:1px solid var(--border);background:#fff;flex-shrink:0;
+}
+.qr-row-body{flex:1;min-width:0;text-align:left;}
+.qr-row-title{
+  font-size:clamp(12px,3.2vw,14px);font-weight:900;color:var(--dark);
+  font-family:var(--H1);text-transform:uppercase;line-height:1.1;margin-bottom:3px;
+}
+.qr-row-sub{font-size:clamp(10px,2.6vw,11.5px);color:var(--grey);font-family:var(--H2);line-height:1.4;}
+
+/* ── Footer ── */
+.legal{
+  margin-top:auto;
+  padding:clamp(18px,4.5vw,24px) clamp(20px,5vw,28px) clamp(24px,6vw,32px);
+  text-align:center;font-size:clamp(9px,2.3vw,10px);color:var(--grey);
+  font-family:var(--H2);line-height:1.55;
+}
+.legal .jlogo{
+  font-family:var(--H1);font-weight:900;font-size:clamp(18px,5vw,22px);
+  color:var(--orange);letter-spacing:.02em;margin-bottom:8px;
+}
+
+.demo-reset{
+  position:fixed;bottom:8px;left:8px;font-size:10px;color:#a8a8a8;
+  background:none;border:1px solid #d0d0d6;border-radius:6px;padding:3px 8px;
+  cursor:pointer;font-family:var(--H2);z-index:50;
+}
+</style>
+</head>
+<body>
+
+<div id="play-transition"></div>
+
+<div id="app">
+
+  <!-- Header -->
+  <div class="hd">
+    <img class="hd-star" src="assets/star.png" alt="" draggable="false">
+    <div class="hd-eyebrow">Offre spéciale app</div>
+    <div class="hd-title">Boîte<br>Mystère<em>Choisis. Gagne. Réclame.</em></div>
+    <div class="hd-sub">Chaque boîte cache un prix — <b>aucune boîte perdante</b>. Touche une boîte pour découvrir ta surprise !</div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat">
+      <div class="stat-val hi" id="claimedCount">—</div>
+      <div class="stat-lbl"><span class="live-dot"></span>Boîtes réclamées aujourd'hui</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val danger" id="countdown">10:00</div>
+      <div class="stat-lbl">L'offre disparaît dans</div>
+    </div>
+  </div>
+
+  <!-- Boxes -->
+  <div class="game-card">
+    <div class="game-hint">Une seule chance — <b>choisis bien !</b></div>
+    <div class="boxes" id="boxes"></div>
+    <p class="played-note" id="playedNote">Tu as déjà ouvert ta boîte — ton prix est juste en dessous. Une seule participation par personne 😉</p>
+  </div>
+
+  <!-- Reveal -->
+  <div class="reveal" id="reveal">
+    <div class="rv-voucher">
+      <div class="rv-eyebrow" id="rvEyebrow">🎉 Bravo, tu as gagné</div>
+      <div class="rv-pct" id="prizePct">-10%</div>
+      <div class="rv-label" id="prizeLabel">sur ta prochaine commande</div>
+      <div class="rv-code"><span class="masked" id="maskedCode">JUM-XXXX-XXXX</span></div>
+      <div class="rv-lock"><img class="lock-ico" src="assets/lock.png" alt="" draggable="false"> Ton code se débloque dans l'app Jumia après installation.</div>
+      <div class="rv-expiry">Expire dans <span id="expiryTimer">--:--:--</span></div>
+    </div>
+    <div class="claim-card">
+      <a class="btn-claim" id="ctaLink" href="#" target="_blank" rel="noopener">Installer l'app pour réclamer</a>
+      <div class="qr-row">
+        <img id="qrImg" alt="QR code — installer l'app Jumia" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMYAAADGCAIAAAAG+WgKAAAEBUlEQVR4nO3dQYpUMRRAURWX5cSVO3Ff7dyAhHCTn9+eM5S2q7QugUd+JV8/Pj6+QOfb02+Az0ZSxCRFTFLEJEVMUsQkRUxSxCRFTFLEJEXs+8wP/fzxY/f7+Idfv3//9Sfj+xl/ZjTzr5j5Pc+67bMYWaWISYqYpIhJipikiE1NfKN9k9HaXPbsNFdNoGvv8NnPYmSVIiYpYpIiJilikiK2OPGN1qaD2/bUZqawmX/pszPgs5+FVYqYpIhJipikiEmKWDbxnbTvyca1+W7f73kjqxQxSRGTFDFJEZMUsVdOfKOZCauauarX+qxToVWKmKSISYqYpIhJilg28d32fOY+a09+npzvnv0srFLEJEVMUsQkRUxSxBYnvjfuRlVz2cmfmXHbZ2GVIiYpYpIiJilikiL29Y03sFcnnOx7rc9xE8QaqxQxSRGTFDFJEZMUscX7+KozJPc967hv52vfWS63Pfm59rlbpYhJipikiEmKmKSIbdzjO3lHwG13Q+zb43MDO/8dSRGTFDFJEZMUsaN7fNVr3XZjwvibq/+f226Wn2GVIiYpYpIiJilikiI2tcdX3TWw78nGtd88Ovmk5bN7fNX/88gqRUxSxCRFTFLEJEVsao/v5Bkj1XmV1Qw42jc5zvzmk5/F2mtZpYhJipikiEmKmKSIvfJ7fLftc52cN32Pj/+OpIhJipikiEmK2OJTnSe/pzbad87kmpOnd645+WSsVYqYpIhJipikiEmK2NEb2NeeWjx5Tsva1HPyPe+bdqvdQ6sUMUkRkxQxSRGTFLHsqc5nz8/cNyvte/X7b5TwPT6uIClikiImKWKSIrbxrM4Z+87zPHnCyej++/ic1clrSIqYpIhJipikiB3d4zv5bOFJz9778OysPbJKEZMUMUkRkxQxSRHbeFbn6P7TVEYn56nq1dfY4+NSkiImKWKSIiYpYlMntzy797Rm33frTt7tvm/Hc9/5M1YpYpIiJilikiImKWJH9/gqz970t+8U0Jm/NWPf3X/2+HiApIhJipikiEmK2MY9vsratHLyFoOTu3X7ziCtniC1ShGTFDFJEZMUMUkRW7yP79nv3508Aebkc5X75jL38fFikiImKWKSIiYpYosT3+i2cyZnXmvfTlw1YZ3cGbTHx6UkRUxSxCRFTFLEsonvpH0nrpx8znPf9wGr2c33+LiCpIhJipikiEmK2CsnvlE1B528We+2/cSKVYqYpIhJipikiEmKWDbxnbw5bs3958/sO5Vl5v34Hh+XkhQxSRGTFDFJEVuc+J6dnqrnGPdNYfueq1x7rZPfsrRKEZMUMUkRkxQxSRF75X183MwqRUxSxCRFTFLEJEVMUsQkRUxSxCRFTFLEJEXsD1myGD6+mHFhAAAAAElFTkSuQmCC">
+        <div class="qr-row-body">
+          <div class="qr-row-title">Sur ordinateur ?</div>
+          <div class="qr-row-sub">Scanne le QR code avec ton téléphone pour installer l'app et débloquer ton code.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="legal">
+    <div class="jlogo">JUMIA</div>
+    Une participation par personne. Le code promo est révélé dans l'app Jumia après installation et reste valable 48&nbsp;heures après le jeu. Conditions générales applicables.
+  </div>
+
+</div>
+
+<button class="demo-reset" id="demoReset" title="Démo uniquement — à retirer en production">↺ reset démo</button>
+
+<script>
+/* =====================================================================
+   BOÎTE MYSTÈRE — prototype
+   NOTES PRODUCTION (voir spec) :
+   - Le tirage pondéré DOIT être côté serveur. Ici client-side pour démo.
+     En prod : POST /api/mystery-box/play → { prizeId, label, playToken }.
+   - playToken signé/opaque, lié à la session, expirant sous 24-48h.
+   - Limite 1 jeu : à imposer côté serveur (IP/session/email) ;
+     localStorage n'est que la couche client.
+   - Ajouter playToken au lien store/deep link pour l'attribution install,
+     puis auto-appliquer ou révéler le code in-app après validation.
+   - Logger : play, clic CTA, install, claim. Métrique clé =
+     play → install → claim, pas play → reveal.
+===================================================================== */
+
+// Table des prix pondérée (miroir de la config serveur)
+const PRIZES = [
+  { id:'p5',  pct:'-5%',  label:'sur ta prochaine commande', weight:30, type:'discount' },
+  { id:'p10', pct:'-10%', label:'sur ta prochaine commande', weight:25, type:'discount' },
+  { id:'p15', pct:'-15%', label:'sur ta prochaine commande', weight:20, type:'discount' },
+  { id:'p20', pct:'-20%', label:'sur ta prochaine commande', weight:15, type:'discount' },
+  { id:'ship',pct:'LIVRAISON GRATUITE', label:'sur ta prochaine commande', weight:8, type:'shipping' },
+  { id:'p30', pct:'-30%', label:'le gros lot — bien joué !', weight:2, type:'discount' },
+];
+
+const STORE_LINK = 'https://play.google.com/store/apps/details?id=com.jumia.android';
+const STORAGE_KEY = 'jumia_mystery_play';
+const OFFER_SECONDS = 10 * 60;
+const PRIZE_TTL_MS = 48 * 3600e3;
+
+const IMG = {
+  closed:  'assets/box-closed.png',   // boîte fermée (ruban orange + ?)
+  open:    'assets/box-open.png',     // boîte ouverte, explosion d'étoiles
+  jackpot: 'assets/box-jackpot.png',  // boîte premium dorée (gros lot -30%)
+};
+// précharger les états ouverts pour un swap instantané
+['open','jackpot'].forEach(k=>{ const i=new Image(); i.src=IMG[k]; });
+
+const boxImg    = '<img src="'+IMG.closed+'" alt="" draggable="false">';
+function openImg(jackpot){
+  return '<img src="'+(jackpot?IMG.jackpot:IMG.open)+'" alt="" draggable="false">';
+}
+
+// --- helpers ---------------------------------------------------------
+function rollPrize(){ // DÉMO UNIQUEMENT — côté serveur en production
+  const total = PRIZES.reduce((s,p)=>s+p.weight,0);
+  let r = Math.random()*total;
+  for(const p of PRIZES){ if((r-=p.weight)<0) return p; }
+  return PRIZES[0];
+}
+function makeToken(){ // remplacé par un token signé serveur en prod
+  return 'tok_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36);
+}
+function store(o){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(o)); }catch(e){} }
+function load(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)); }catch(e){ return null; } }
+function pad(n){ return String(n).padStart(2,'0'); }
+
+// --- rendu des boîtes --------------------------------------------------
+const boxesEl = document.getElementById('boxes');
+for(let i=0;i<4;i++){
+  const b = document.createElement('button');
+  b.className = 'box';
+  b.dataset.index = i;
+  b.innerHTML = boxImg + '<span class="box-lbl">Boîte '+(i+1)+'</span>';
+  b.addEventListener('click', () => play(i));
+  boxesEl.appendChild(b);
+}
+
+// --- flux du jeu -------------------------------------------------------
+function play(index){
+  if(load()) return; // 1 jeu par session
+  const prize = rollPrize();          // → appel serveur en production
+  const token = makeToken();          // → renvoyé par le serveur
+  const played = { index, prizeId: prize.id, token, ts: Date.now() };
+  store(played);
+  // wipe orange puis reveal
+  const pt = document.getElementById('play-transition');
+  pt.classList.add('go');
+  setTimeout(()=>{ showResult(played, prize, true); }, 380);
+  setTimeout(()=>{ pt.classList.remove('go'); }, 850);
+  // analytics: logEvent('mystery_box_play', {prizeId: prize.id, token})
+}
+
+function showResult(played, prize, animate){
+  document.querySelectorAll('.box').forEach(b=>{
+    b.disabled = true;
+    if(+b.dataset.index === played.index){
+      b.classList.add('chosen');
+      if(!animate) b.style.animation = 'none';
+      b.innerHTML = openImg(prize.id==='p30') + '<span class="box-lbl">Gagné !</span>';
+    } else {
+      b.classList.add('dimmed');
+    }
+  });
+  const pct = document.getElementById('prizePct');
+  pct.textContent = prize.pct;
+  pct.classList.toggle('freeship', prize.type === 'shipping');
+  document.getElementById('prizeLabel').textContent = prize.label;
+  document.getElementById('rvEyebrow').textContent =
+    prize.id === 'p30' ? '🏆 Incroyable — le gros lot !' : '🎉 Bravo, tu as gagné';
+  document.getElementById('ctaLink').href =
+    STORE_LINK + '&referrer=mysterybox_' + encodeURIComponent(played.token);
+  document.getElementById('reveal').classList.add('show');
+  if(!animate) document.getElementById('playedNote').style.display = 'block';
+  startExpiry(played.ts);
+  document.getElementById('reveal').scrollIntoView({behavior: animate?'smooth':'auto', block:'nearest'});
+}
+
+// compte à rebours d'expiration du prix (48h)
+let expiryInt = null;
+function startExpiry(ts){
+  const el = document.getElementById('expiryTimer');
+  if(expiryInt) clearInterval(expiryInt);
+  const tick = ()=>{
+    const left = ts + PRIZE_TTL_MS - Date.now();
+    if(left <= 0){
+      el.textContent = '00:00:00';
+      clearInterval(expiryInt);
+      try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+      return;
+    }
+    const h = Math.floor(left/3600e3), m = Math.floor(left%3600e3/60e3), s = Math.floor(left%60e3/1e3);
+    el.textContent = pad(h)+':'+pad(m)+':'+pad(s);
+  };
+  tick();
+  expiryInt = setInterval(tick, 1000);
+}
+
+// restaurer un jeu précédent au rechargement
+const prev = load();
+if(prev){
+  const prize = PRIZES.find(p=>p.id===prev.prizeId) || PRIZES[0];
+  if(Date.now()-prev.ts < PRIZE_TTL_MS){ showResult(prev, prize, false); }
+  else { try{ localStorage.removeItem(STORAGE_KEY); }catch(e){} }
+}
+
+// --- couche urgence (simulée) -------------------------------------------
+const baseClaims = 1273 + (new Date().getHours()*47);
+let claims = baseClaims + Math.floor(Math.random()*30);
+const claimedEl = document.getElementById('claimedCount');
+claimedEl.textContent = claims.toLocaleString('fr-FR');
+setInterval(()=>{ if(Math.random()<.4){ claims++; claimedEl.textContent = claims.toLocaleString('fr-FR'); } }, 4000);
+
+let secs = OFFER_SECONDS;
+const cdEl = document.getElementById('countdown');
+setInterval(()=>{
+  if(secs>0) secs--;
+  cdEl.textContent = pad(Math.floor(secs/60))+':'+pad(secs%60);
+}, 1000);
+
+// --- reset démo (à retirer en production) --------------------------------
+document.getElementById('demoReset').addEventListener('click', ()=>{
+  try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+  location.reload();
+});
+</script>
+</body>
+</html>

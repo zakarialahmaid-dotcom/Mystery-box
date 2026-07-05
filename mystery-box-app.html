@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<!-- A11y : zoom autorisé (WCAG 1.4.4) — pas de maximum-scale -->
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ff9900">
+<title>Jumia — Boîte Mystère · Gagne jusqu'à 60 DH</title>
+<meta name="description" content="Ouvre une boîte mystère et gagne un bon d'achat garanti, jusqu'à 60 DH.">
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   DESIGN TOKENS — système Jumia (source : brand guidelines + jeu GDB)
+   Grille d'espacement 4/8px · type scale 1.25 · radius scale 4/8/12/16
+═══════════════════════════════════════════════════════════════════ */
+@font-face{font-family:'HelveticaDisplay';src:url('https://raw.githubusercontent.com/Madzack69/Fonts/main/helvetica-compressed-5871d14b6903a.otf') format('opentype');font-weight:900;font-display:swap;}
+@font-face{font-family:'HelveticaText';src:url('https://raw.githubusercontent.com/Madzack69/Fonts/main/Helvetica-Bold.ttf') format('truetype');font-weight:700;font-display:swap;}
+@font-face{font-family:'HelveticaText';src:url('https://raw.githubusercontent.com/Madzack69/Fonts/main/Helvetica.ttf') format('truetype');font-weight:500;font-display:swap;}
+/* ⚠ PROD : auto-héberger les fontes sur l'infra Jumia (licence Helvetica
+   requise). raw.githubusercontent.com n'est pas un CDN. Fallback: Arial. */
+
+:root{
+  /* couleurs */
+  --bg:#F1F1F2; --card:#ffffff; --border:#E4E4E6;
+  --ink:#403b3b; --ink-2:#6a6a6a; --ink-3:#a8a8a8;
+  --orange:#ff9900; --orange-d:#e68800; --yellow:#ffba00;
+  --red:#ec2326; --green:#20ac76; --tint:#fff8ee;
+  /* espacement (grille 4px) */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:20px; --s-6:24px; --s-8:32px;
+  /* rayons */
+  --r-s:8px; --r-m:12px; --r-l:16px; --r-full:9999px;
+  /* typo */
+  --H1:'HelveticaDisplay','Arial Black',Arial,sans-serif;
+  --H2:'HelveticaText',Arial,sans-serif;
+  /* élévation CTA (style "hard shadow" du design system jeu) */
+  --push:0 4px 0 var(--orange-d);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{width:100%;height:100%;background:var(--bg);overscroll-behavior:none;}
+body{
+  display:flex;justify-content:center;overflow:hidden;
+  font-family:var(--H2);color:var(--ink);font-size:16px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+}
+#app{
+  width:100%;max-width:480px;height:100%;
+  display:flex;flex-direction:column;overflow:hidden;position:relative;
+  background:var(--bg);
+  padding-bottom:env(safe-area-inset-bottom,0);
+}
+
+/* focus visible au clavier — WCAG 2.4.7 */
+:focus{outline:none;}
+:focus-visible{outline:3px solid var(--orange);outline-offset:2px;border-radius:var(--r-s);}
+
+/* mouvement réduit — WCAG 2.3.3 */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;}
+}
+
+@keyframes fadeIn{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:none}}
+@keyframes boxIn{0%{opacity:0;transform:scale(.7)}70%{transform:scale(1.04)}100%{opacity:1;transform:scale(1)}}
+@keyframes pop{0%{transform:scale(1)}35%{transform:scale(1.12) rotate(-2deg)}70%{transform:scale(.97) rotate(1.5deg)}100%{transform:scale(1)}}
+@keyframes ctaBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes wipeIn{0%{transform:scaleY(0)}45%{transform:scaleY(1)}55%{transform:scaleY(1)}100%{transform:scaleY(0)}}
+@keyframes wiggle{0%,100%{transform:rotate(0)}20%{transform:rotate(-4deg)}40%{transform:rotate(4deg)}60%{transform:rotate(-3deg)}80%{transform:rotate(3deg)}}
+@keyframes confettiFall{0%{transform:translateY(-10vh) rotate(0)}100%{transform:translateY(110vh) rotate(720deg)}}
+
+#play-transition{
+  position:fixed;inset:0;background:var(--orange);z-index:9999;
+  pointer-events:none;transform:scaleY(0);transform-origin:bottom;
+}
+#play-transition.go{animation:wipeIn .7s cubic-bezier(.76,0,.24,1) forwards;}
+
+.confetti{
+  position:fixed;top:0;width:10px;height:14px;z-index:9998;pointer-events:none;
+  animation:confettiFall linear forwards;
+}
+
+/* ══════════ ÉCRAN JEU ══════════ */
+.screen{flex:1;min-height:0;display:none;flex-direction:column;overflow:hidden;animation:fadeIn .25s ease;}
+.screen.active{display:flex;}
+#screen-result{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;}
+
+.hd{
+  flex:0 0 auto;background:var(--orange);position:relative;overflow:hidden;
+  padding:calc(var(--s-4) + env(safe-area-inset-top,0)) var(--s-6) var(--s-4);
+}
+.hd-star{
+  position:absolute;right:-20px;top:-14px;width:clamp(80px,21vw,100px);height:auto;
+  opacity:.28;pointer-events:none;
+}
+.hd-eyebrow{
+  font-size:clamp(9px,2.3vw,10px);font-weight:700;letter-spacing:.08em;
+  color:rgba(255,255,255,.9);text-transform:uppercase;margin-bottom:var(--s-1);
+}
+h1.hd-title{
+  font-family:var(--H1);font-weight:900;color:#fff;text-transform:uppercase;
+  font-size:clamp(28px,8.5vw,38px);line-height:.88;letter-spacing:-.02em;
+}
+.hd-title em{
+  display:block;font-style:normal;font-size:.6em;
+  color:rgba(255,255,255,.6);letter-spacing:.02em;margin-top:var(--s-1);
+}
+
+/* bandeau info honnête : fin de campagne réelle + règle du jeu */
+.info-strip{
+  flex:0 0 auto;display:flex;gap:var(--s-2);
+  padding:var(--s-3) var(--s-4) 0;
+}
+.info-chip{
+  flex:1;background:var(--card);border:1px solid var(--border);border-radius:var(--r-m);
+  padding:var(--s-3) var(--s-2);text-align:center;
+}
+.info-chip-val{
+  font-family:var(--H1);font-weight:900;font-size:clamp(14px,4vw,18px);
+  color:var(--ink);line-height:1;font-variant-numeric:tabular-nums;
+}
+.info-chip-val.hi{color:var(--orange);}
+.info-chip-lbl{
+  font-size:clamp(8px,2.1vw,9.5px);font-weight:700;color:var(--ink-2);
+  text-transform:uppercase;letter-spacing:.05em;margin-top:var(--s-1);
+}
+
+.game-wrap{
+  flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;
+  padding:var(--s-3) var(--s-4);
+}
+.game-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r-l);
+  padding:var(--s-4);
+}
+.game-hint{
+  font-size:clamp(11px,2.9vw,12.5px);font-weight:600;color:var(--ink-2);
+  text-align:center;margin-bottom:var(--s-3);
+}
+.game-hint b{color:var(--orange);font-weight:700;}
+.boxes{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--s-2);}
+.box{
+  aspect-ratio:1/1;min-height:44px; /* cible tactile WCAG 2.5.5 */
+  border:1.5px solid var(--border);border-radius:var(--r-l);
+  background:var(--tint);cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--s-1);
+  transition:transform .12s,border-color .15s,background .15s;
+  font-family:var(--H1);touch-action:manipulation;
+  animation:boxIn .35s ease backwards;
+}
+.box:nth-child(1){animation-delay:.05s}.box:nth-child(2){animation-delay:.12s}
+.box:nth-child(3){animation-delay:.19s}.box:nth-child(4){animation-delay:.26s}
+.box:active:not(:disabled){transform:scale(.96);border-color:var(--orange);}
+.box:disabled{cursor:default;}
+.box.dimmed{opacity:.4;background:var(--bg);}
+.box.chosen{background:#fff;border-color:var(--orange);border-width:2px;animation:pop .45s ease;}
+.box img{width:62%;height:62%;object-fit:contain;pointer-events:none;-webkit-user-drag:none;}
+.box .img-fallback{font-size:clamp(34px,10vw,48px);line-height:1;}
+.box-lbl{
+  font-size:clamp(10px,2.7vw,12px);font-weight:900;color:var(--ink);
+  text-transform:uppercase;letter-spacing:.04em;
+}
+.box.chosen .box-lbl{color:var(--orange-d);}
+
+/* échelle des gains — transparence (pratique standard wheel-of-fortune) */
+.ladder{
+  flex:0 0 auto;padding:0 var(--s-4) var(--s-4);
+}
+.ladder-title{
+  font-size:clamp(8px,2.1vw,9.5px);font-weight:700;color:var(--ink-2);
+  text-transform:uppercase;letter-spacing:.08em;text-align:center;margin-bottom:var(--s-2);
+}
+.ladder-chips{display:flex;gap:var(--s-1);justify-content:center;flex-wrap:wrap;}
+.ladder-chip{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r-full);
+  padding:5px 12px;font-family:var(--H1);font-weight:900;
+  font-size:clamp(11px,3vw,13px);color:var(--ink);white-space:nowrap;
+}
+.ladder-chip.top{background:var(--tint);border-color:rgba(255,153,0,.45);color:var(--orange-d);}
+
+/* ══════════ ÉCRAN RÉSULTAT ══════════ */
+.rs-top{
+  flex:0 0 auto;background:var(--orange);text-align:center;
+  padding:calc(var(--s-5) + env(safe-area-inset-top,0)) var(--s-6) var(--s-4);
+}
+.rs-eyebrow{
+  font-size:clamp(9px,2.4vw,11px);font-weight:700;letter-spacing:.08em;
+  color:rgba(255,255,255,.9);text-transform:uppercase;margin-bottom:var(--s-1);
+}
+h2.rs-title{
+  font-family:var(--H1);font-weight:900;color:#fff;text-transform:uppercase;
+  font-size:clamp(28px,8vw,38px);line-height:.9;letter-spacing:-.01em;
+}
+.rs-box-img{
+  width:clamp(92px,24vw,116px);height:clamp(92px,24vw,116px);object-fit:contain;
+  margin:var(--s-3) auto 0;display:block;animation:wiggle .6s ease;-webkit-user-drag:none;
+}
+
+.rs-voucher{
+  margin:var(--s-4) var(--s-6) 0;
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r-l);
+  padding:var(--s-5);text-align:center;
+}
+.rv-amount{
+  font-family:var(--H1);font-weight:900;color:var(--orange);
+  font-size:clamp(46px,13vw,64px);line-height:.88;letter-spacing:-.02em;
+}
+.rv-amount span{font-size:.45em;letter-spacing:0;}
+.rv-label{
+  font-size:clamp(12px,3.2vw,15px);font-weight:700;color:var(--ink-2);margin-top:var(--s-2);
+}
+.rv-code-row{
+  display:flex;align-items:stretch;justify-content:center;gap:var(--s-2);margin-top:var(--s-4);
+}
+.rv-code{
+  background:var(--tint);border:2px dashed var(--orange);border-radius:var(--r-m);
+  padding:10px 14px;font-family:var(--H1);font-weight:900;
+  font-size:clamp(14px,3.9vw,17px);color:var(--ink);letter-spacing:.08em;
+  display:flex;align-items:center;
+  -webkit-user-select:text;user-select:text;
+}
+.btn-copy{
+  min-height:44px;background:var(--orange);color:#fff;border:none;border-radius:var(--r-m);
+  padding:10px clamp(14px,3.6vw,18px);font-family:var(--H1);font-weight:900;
+  font-size:clamp(11px,3vw,13px);text-transform:uppercase;letter-spacing:.04em;cursor:pointer;
+  box-shadow:var(--push);transition:transform .1s,box-shadow .1s,background .15s;
+  touch-action:manipulation;
+}
+.btn-copy:active{transform:translateY(4px);box-shadow:0 0 0 var(--orange-d);}
+.btn-copy.copied{background:var(--green);box-shadow:0 4px 0 #178f61;}
+.rv-expiry{
+  font-size:clamp(10px,2.6vw,12px);font-weight:700;color:var(--orange-d);
+  margin-top:var(--s-3);font-variant-numeric:tabular-nums;
+}
+
+.rs-conditions{
+  margin:var(--s-3) var(--s-6) 0;
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r-m);
+  padding:var(--s-3) var(--s-4);
+}
+.rs-cond-row{
+  display:flex;align-items:flex-start;gap:var(--s-2);
+  font-size:clamp(10px,2.7vw,12px);color:var(--ink-2);font-weight:600;
+  padding:var(--s-1) 0;line-height:1.45;
+}
+.rs-cond-row b{color:var(--ink);}
+.rs-cond-dot{
+  width:6px;height:6px;border-radius:50%;background:var(--orange);
+  flex-shrink:0;margin-top:6px;
+}
+
+.rs-actions{
+  flex:0 0 auto;margin-top:auto;
+  padding:var(--s-4) var(--s-6) calc(var(--s-6) + env(safe-area-inset-bottom,0));
+  display:flex;flex-direction:column;gap:var(--s-2);
+}
+.btn-primary{
+  display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
+  min-height:48px;background:var(--orange);color:#fff;border:none;border-radius:var(--r-m);
+  padding:clamp(15px,4.2vw,19px);font-family:var(--H1);font-weight:900;
+  font-size:clamp(15px,4.3vw,18px);text-transform:uppercase;letter-spacing:.04em;
+  cursor:pointer;text-decoration:none;
+  box-shadow:var(--push),0 6px 20px rgba(255,153,0,.25);
+  animation:ctaBounce 2s ease-in-out infinite;
+  transition:transform .1s,box-shadow .1s;touch-action:manipulation;
+}
+.btn-primary:active{transform:translateY(4px);box-shadow:0 0 0 var(--orange-d);animation:none;}
+.rs-note{
+  text-align:center;font-size:clamp(9px,2.3vw,10px);color:var(--ink-2);line-height:1.5;
+}
+
+/* ══════════ ÉCRAN CAMPAGNE TERMINÉE ══════════ */
+#screen-ended{align-items:center;justify-content:center;text-align:center;padding:var(--s-8) var(--s-6);}
+.ended-emoji{font-size:clamp(40px,12vw,56px);margin-bottom:var(--s-3);}
+h2.ended-title{
+  font-family:var(--H1);font-weight:900;text-transform:uppercase;
+  font-size:clamp(24px,7vw,32px);line-height:.9;color:var(--ink);margin-bottom:var(--s-2);
+}
+.ended-sub{font-size:clamp(12px,3.2vw,14px);color:var(--ink-2);max-width:280px;margin:0 auto var(--s-5);}
+#screen-ended .btn-primary{max-width:300px;animation:none;}
+
+/* erreur serveur */
+.play-error{
+  display:none;text-align:center;font-size:clamp(10px,2.7vw,12px);
+  color:var(--red);font-weight:700;margin-top:var(--s-3);
+}
+.play-error.show{display:block;}
+
+.demo-reset{
+  position:fixed;bottom:8px;left:8px;font-size:10px;color:var(--ink-3);
+  background:none;border:1px solid #d0d0d6;border-radius:6px;padding:4px 8px;
+  min-height:24px;cursor:pointer;font-family:var(--H2);z-index:50;
+}
+</style>
+</head>
+<body>
+
+<div id="play-transition" aria-hidden="true"></div>
+
+<div id="app">
+
+  <!-- ═══ ÉCRAN 1 : JEU ═══ -->
+  <main id="screen-play" class="screen active" aria-label="Jeu boîte mystère">
+    <header class="hd">
+      <img class="hd-star" src="assets/star.png" alt="" draggable="false"
+           onerror="this.style.display='none'">
+      <p class="hd-eyebrow">Édition spéciale</p>
+      <h1 class="hd-title">Boîte Mystère<em>1 boîte = 1 bon d'achat garanti</em></h1>
+    </header>
+
+    <div class="info-strip">
+      <div class="info-chip">
+        <div class="info-chip-val" id="campaignCountdown" aria-live="off">—</div>
+        <div class="info-chip-lbl">Fin de l'offre</div>
+      </div>
+      <div class="info-chip">
+        <div class="info-chip-val hi">1×</div>
+        <div class="info-chip-lbl">Par client</div>
+      </div>
+    </div>
+
+    <div class="game-wrap">
+      <div class="game-card">
+        <p class="game-hint" id="gameHint">Une seule chance — <b>choisis bien !</b></p>
+        <div class="boxes" id="boxes" role="group" aria-label="Choisis une boîte parmi quatre"></div>
+        <p class="play-error" id="playError" role="alert">Oups, petit souci de connexion. Réessaie !</p>
+      </div>
+    </div>
+
+    <div class="ladder" aria-label="Gains possibles">
+      <p class="ladder-title">Dans les boîtes aujourd'hui</p>
+      <div class="ladder-chips">
+        <span class="ladder-chip">10 DH</span>
+        <span class="ladder-chip">20 DH</span>
+        <span class="ladder-chip">30 DH</span>
+        <span class="ladder-chip">50 DH</span>
+        <span class="ladder-chip top">60 DH</span>
+      </div>
+    </div>
+  </main>
+
+  <!-- ═══ ÉCRAN 2 : RÉSULTAT ═══ -->
+  <section id="screen-result" class="screen" aria-label="Ton gain">
+    <div class="rs-top">
+      <p class="rs-eyebrow" id="rsEyebrow">Félicitations</p>
+      <h2 class="rs-title" id="rsTitle" tabindex="-1">BRAVO !</h2>
+      <img class="rs-box-img" id="rsBoxImg" src="assets/box-open.png" alt="Boîte ouverte" draggable="false"
+           onerror="this.outerHTML='<div class=&quot;ended-emoji&quot;>🎁</div>'">
+    </div>
+
+    <div class="rs-voucher" role="status" aria-live="polite">
+      <div class="rv-amount" id="rvAmount">10 <span>DH</span></div>
+      <p class="rv-label" id="rvLabel">de réduction dès 120 DH d'achat</p>
+      <div class="rv-code-row">
+        <div class="rv-code" id="rvCode">—</div>
+        <button class="btn-copy" id="btnCopy" aria-label="Copier le code promo">Copier</button>
+      </div>
+      <p class="rv-expiry">Expire dans <span id="expiryTimer">--:--:--</span></p>
+    </div>
+
+    <div class="rs-conditions" aria-label="Conditions du bon">
+      <div class="rs-cond-row"><span class="rs-cond-dot" aria-hidden="true"></span><span>Valable <b>1 fois</b> par client, sur l'app et le site.</span></div>
+      <div class="rs-cond-row"><span class="rs-cond-dot" aria-hidden="true"></span><span id="condMin">Commande minimum : <b>120 DH</b>.</span></div>
+      <div class="rs-cond-row"><span class="rs-cond-dot" aria-hidden="true"></span><span>Hors <b>smartphones</b> et <b>épicerie</b>.</span></div>
+    </div>
+
+    <div class="rs-actions">
+      <a class="btn-primary" id="btnUse" href="#">Utiliser mon bon</a>
+      <p class="rs-note">Ton code reste disponible ici et sera appliqué au paiement.</p>
+    </div>
+  </section>
+
+  <!-- ═══ ÉCRAN 3 : CAMPAGNE TERMINÉE ═══ -->
+  <section id="screen-ended" class="screen" aria-label="Offre terminée">
+    <div class="ended-emoji" aria-hidden="true">📦</div>
+    <h2 class="ended-title">C'est terminé !</h2>
+    <p class="ended-sub">Cette édition de la Boîte Mystère est finie. Reviens vite — d'autres surprises arrivent.</p>
+    <a class="btn-primary" id="btnEndedShop" href="#">Continuer mes achats</a>
+  </section>
+
+</div>
+
+<button class="demo-reset" id="demoReset" title="Démo uniquement — à retirer en production">↺ reset démo</button>
+
+<script>
+'use strict';
+/* ═══════════════════════════════════════════════════════════════════
+   BOÎTE MYSTÈRE — VERSION APP · prototype production-ready
+
+   ARCHITECTURE
+   ┌─────────────┐   apiPlay()   ┌──────────────────────────────┐
+   │  UI / JEU   │ ────────────► │  MOCK SERVER (à remplacer)   │
+   │  (ce fichier│ ◄──────────── │  = contrat de l'API réelle   │
+   │   ne connaît│   {prize}     └──────────────────────────────┘
+   │   AUCUN code│
+   │   ni odds)  │
+   └─────────────┘
+
+   CONTRAT API RÉELLE (à implémenter côté backend) :
+   POST /api/mystery-box/play        body: {customerId}
+     200 → {prizeId, amount, minOrder, code, expiresAt}
+     409 → déjà joué (renvoyer le gain existant)
+     410 → campagne terminée / stock épuisé
+   Le serveur : tire au sort selon les poids ET le stock restant,
+   décrémente l'inventaire, signe le résultat, log l'événement.
+   Le client ne doit JAMAIS recevoir la table complète des codes.
+═══════════════════════════════════════════════════════════════════ */
+
+/* ── Storage sûr (WebViews stricts : localStorage peut throw) ── */
+const Store = (()=>{
+  let mem = {};
+  let ok = false;
+  try{ localStorage.setItem('__mb__','1'); localStorage.removeItem('__mb__'); ok = true; }catch(e){}
+  return {
+    get(k){ try{ return ok ? localStorage.getItem(k) : (mem[k] ?? null); }catch(e){ return mem[k] ?? null; } },
+    set(k,v){ try{ if(ok) localStorage.setItem(k,v); }catch(e){} mem[k]=v; },
+    del(k){ try{ if(ok) localStorage.removeItem(k); }catch(e){} delete mem[k]; },
+  };
+})();
+
+/* ── Analytics (brancher GTM/segment : dataLayer déjà standard) ── */
+function track(event, props){
+  const payload = Object.assign({event:'mb_'+event, ts:Date.now()}, props||{});
+  (window.dataLayer = window.dataLayer || []).push(payload);
+  // console.debug('[track]', payload);
+}
+
+/* ── CONFIG CAMPAGNE ──
+   ⚠ PROD : ces valeurs viennent du serveur (config campagne), pas du client.
+   Date au fuseau du Maroc (+01:00), alignée sur "Campaign End Date/Hour". */
+const CAMPAIGN_END = new Date('2026-07-12T23:59:00+01:00');
+const STORE_LINK   = 'https://www.jumia.ma/';           // fallback web
+const DEEP_LINK    = '';  // ex : 'jumia://ma/cart?coupon=' — prioritaire si défini
+const STORAGE_KEY  = 'jumia_mystery_app_play';
+
+/* ═══════════════ MOCK SERVER — SUPPRIMER EN PRODUCTION ═══════════════
+   Simule le backend, Y COMPRIS la gestion de stock (Max Usages = 150
+   par palier dans les templates WOF WC W3). Les poids respectent le
+   budget : plus le bon est gros, plus il est rare — et un palier épuisé
+   sort du tirage au lieu de distribuer des codes morts.               */
+const MockServer = (()=>{
+  const TIERS = [
+    { prizeId:'v10', amount:10, minOrder:120, code:'GWC-106694', weight:35, stock:150 },
+    { prizeId:'v20', amount:20, minOrder:240, code:'GWC-200814', weight:30, stock:150 },
+    { prizeId:'v30', amount:30, minOrder:400, code:'GWC-301357', weight:20, stock:150 },
+    { prizeId:'v50', amount:50, minOrder:600, code:'GWC-502760', weight:10, stock:150 },
+    { prizeId:'v60', amount:60, minOrder:750, code:'GWC-600431', weight:5,  stock:150 },
+  ];
+  return {
+    play(){
+      if(Date.now() >= CAMPAIGN_END.getTime()) return {status:410};
+      const avail = TIERS.filter(t=>t.stock>0);
+      if(!avail.length) return {status:410};
+      const total = avail.reduce((s,t)=>s+t.weight,0);
+      let r = Math.random()*total;
+      let won = avail[avail.length-1];
+      for(const t of avail){ if((r-=t.weight)<0){ won=t; break; } }
+      won.stock--;
+      return {status:200, prize:{
+        prizeId:won.prizeId, amount:won.amount, minOrder:won.minOrder,
+        code:won.code, expiresAt:CAMPAIGN_END.toISOString(),
+      }};
+    }
+  };
+})();
+async function apiPlay(){
+  /* PROD : const res = await fetch('/api/mystery-box/play', {...});
+            return res.json();                                        */
+  await new Promise(r=>setTimeout(r,150)); // latence réseau simulée
+  return MockServer.play();
+}
+/* ═══════════════════════ FIN MOCK SERVER ═══════════════════════ */
+
+/* ── Assets ── */
+const IMG = {
+  closed:'assets/box-closed.png',
+  open:'assets/box-open.png',
+  jackpot:'assets/box-jackpot.png',
+};
+['open','jackpot'].forEach(k=>{ const i=new Image(); i.src=IMG[k]; });
+const FALLBACK_EMOJI = {closed:'🎁', open:'🎉', jackpot:'🏆'};
+function boxImgHTML(kind){
+  return '<img src="'+IMG[kind]+'" alt="" draggable="false" '+
+         'onerror="this.outerHTML=\'<span class=&quot;img-fallback&quot;>'+FALLBACK_EMOJI[kind]+'</span>\'">';
+}
+
+/* ── Utils ── */
+const $ = id => document.getElementById(id);
+function pad(n){ return String(n).padStart(2,'0'); }
+function saveState(o){ Store.set(STORAGE_KEY, JSON.stringify(o)); }
+function loadState(){ try{ return JSON.parse(Store.get(STORAGE_KEY)); }catch(e){ return null; } }
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $(id).classList.add('active');
+}
+
+/* ── Écran jeu : rendu des boîtes ── */
+const boxesEl = $('boxes');
+for(let i=0;i<4;i++){
+  const b = document.createElement('button');
+  b.className = 'box';
+  b.type = 'button';
+  b.dataset.index = i;
+  b.setAttribute('aria-label','Boîte mystère numéro '+(i+1));
+  b.innerHTML = boxImgHTML('closed') + '<span class="box-lbl">Boîte '+(i+1)+'</span>';
+  b.addEventListener('click', ()=>play(i, b));
+  boxesEl.appendChild(b);
+}
+
+/* ── Flux de jeu ── */
+let playing = false;
+async function play(index, btn){
+  if(playing || loadState()) return;
+  playing = true;
+  document.querySelectorAll('.box').forEach(b=>{ b.disabled = true; });
+  track('play_click', {box:index});
+
+  const res = await apiPlay().catch(()=>({status:0}));
+  if(res.status !== 200){
+    if(res.status === 410){ enterEnded(); playing=false; return; }
+    // erreur réseau : réactiver et informer (pas d'échec silencieux)
+    document.querySelectorAll('.box').forEach(b=>{ b.disabled = false; });
+    $('playError').classList.add('show');
+    setTimeout(()=>$('playError').classList.remove('show'), 4000);
+    track('play_error', {status:res.status});
+    playing = false;
+    return;
+  }
+
+  const prize = res.prize;
+  saveState({index, prize, ts:Date.now()});
+  track('play_win', {prizeId:prize.prizeId, amount:prize.amount});
+
+  // révélation locale
+  btn.classList.add('chosen');
+  const im = btn.querySelector('img,.img-fallback');
+  if(im && im.tagName==='IMG') im.src = prize.prizeId==='v60' ? IMG.jackpot : IMG.open;
+  document.querySelectorAll('.box').forEach(b=>{
+    if(+b.dataset.index !== index) b.classList.add('dimmed');
+  });
+  if(navigator.vibrate){ try{ navigator.vibrate(prize.prizeId==='v60' ? [40,60,80] : 30); }catch(e){} }
+
+  const pt = $('play-transition');
+  setTimeout(()=>{ pt.classList.add('go'); }, 550);
+  setTimeout(()=>{ showResult(prize, true); }, 900);
+  setTimeout(()=>{ pt.classList.remove('go'); playing=false; }, 1300);
+}
+
+/* ── Écran résultat ── */
+function showResult(prize, celebrate){
+  const jackpot = prize.prizeId === 'v60';
+  $('rsTitle').textContent   = jackpot ? 'GROS LOT !' : 'BRAVO !';
+  $('rsEyebrow').textContent = jackpot ? '🏆 Le maximum possible' : 'Félicitations';
+  $('rsBoxImg').src          = jackpot ? IMG.jackpot : IMG.open;
+  $('rvAmount').innerHTML    = prize.amount+' <span>DH</span>';
+  $('rvLabel').textContent   = 'de réduction dès '+prize.minOrder+' DH d’achat';
+  $('rvCode').textContent    = prize.code;
+  $('condMin').innerHTML     = 'Commande minimum : <b>'+prize.minOrder+' DH</b>.';
+  const link = DEEP_LINK ? DEEP_LINK + encodeURIComponent(prize.code) : STORE_LINK;
+  $('btnUse').href = link;
+  showScreen('screen-result');
+  // a11y : porter le focus sur le titre du résultat
+  $('rsTitle').focus({preventScroll:true});
+  startExpiry(new Date(prize.expiresAt));
+  if(celebrate) confetti(jackpot ? 44 : 26);
+  track('reveal_view', {prizeId:prize.prizeId});
+}
+
+$('btnCopy').addEventListener('click', ()=>{
+  const code = $('rvCode').textContent;
+  const done = ()=>{
+    const b = $('btnCopy');
+    b.textContent = 'Copié !';
+    b.classList.add('copied');
+    setTimeout(()=>{ b.textContent='Copier'; b.classList.remove('copied'); }, 1800);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(code).then(done).catch(()=>fallbackCopy(code, done));
+  } else fallbackCopy(code, done);
+  track('copy_code');
+});
+function fallbackCopy(text, cb){
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;opacity:0;';
+  document.body.appendChild(ta);
+  ta.select();
+  try{ document.execCommand('copy'); }catch(e){}
+  document.body.removeChild(ta);
+  cb();
+}
+$('btnUse').addEventListener('click', ()=>track('use_click'));
+
+/* ── Confettis (couleurs de marque, léger, respecte reduced-motion) ── */
+function confetti(n){
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const colors = ['#ff9900','#ffba00','#403b3b','#ffffff'];
+  for(let i=0;i<n;i++){
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = (Math.random()*100)+'vw';
+    c.style.background = colors[i%colors.length];
+    c.style.animationDuration = (1.6+Math.random()*1.4)+'s';
+    c.style.animationDelay = (Math.random()*.5)+'s';
+    c.style.borderRadius = Math.random()<.5 ? '50%' : '2px';
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(), 3600);
+  }
+}
+
+/* ── Compteurs temps réel (fin de campagne = urgence RÉELLE) ── */
+let expiryInt = null;
+function startExpiry(end){
+  const el = $('expiryTimer');
+  if(expiryInt) clearInterval(expiryInt);
+  const tick = ()=>{
+    const left = end - Date.now();
+    if(left <= 0){ el.textContent = 'expiré'; clearInterval(expiryInt); return; }
+    const d=Math.floor(left/864e5), h=Math.floor(left%864e5/36e5),
+          m=Math.floor(left%36e5/6e4), s=Math.floor(left%6e4/1e3);
+    el.textContent = (d>0? d+'j ':'')+pad(h)+':'+pad(m)+':'+pad(s);
+  };
+  tick();
+  expiryInt = setInterval(tick, 1000);
+}
+function startCampaignCountdown(){
+  const el = $('campaignCountdown');
+  const tick = ()=>{
+    const left = CAMPAIGN_END - Date.now();
+    if(left <= 0){ enterEnded(); return; }
+    const d=Math.floor(left/864e5), h=Math.floor(left%864e5/36e5), m=Math.floor(left%36e5/6e4);
+    el.textContent = d>0 ? d+'j '+pad(h)+'h' : pad(h)+'h '+pad(m)+'m';
+  };
+  tick();
+  setInterval(tick, 30000);
+}
+function enterEnded(){
+  $('btnEndedShop').href = STORE_LINK;
+  showScreen('screen-ended');
+  track('campaign_ended_view');
+}
+
+/* ── Boot : router selon l'état ── */
+(function boot(){
+  track('page_view');
+  const prev = loadState();
+  const ended = Date.now() >= CAMPAIGN_END.getTime();
+  if(prev && prev.prize){
+    // gain déjà obtenu : toujours accessible jusqu'à expiration
+    if(new Date(prev.prize.expiresAt) - Date.now() > 0){ showResult(prev.prize, false); }
+    else if(ended){ enterEnded(); }
+    else { Store.del(STORAGE_KEY); startCampaignCountdown(); }
+  } else if(ended){
+    enterEnded();
+  } else {
+    startCampaignCountdown();
+  }
+})();
+
+/* ── Reset démo — SUPPRIMER EN PRODUCTION ── */
+$('demoReset').addEventListener('click', ()=>{
+  Store.del(STORAGE_KEY);
+  location.reload();
+});
+</script>
+</body>
+</html>
