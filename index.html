@@ -378,6 +378,7 @@ h2.ended-title{
         <span class="ladder-chip">50 DH</span>
         <span class="ladder-chip top">60 DH</span>
       </div>
+      <p class="ladder-title" style="margin-top:var(--s-2)">Plus ton gain est gros, plus tu débloques de bons !</p>
     </div>
   </main>
 
@@ -406,8 +407,8 @@ h2.ended-title{
       <div class="rs-cond-row"><span class="rs-cond-dot" aria-hidden="true"></span><span>Hors <b>smartphones</b> et <b>épicerie</b>.</span></div>
     </div>
 
-    <div class="rs-vlist" id="vlist" aria-label="Tes autres bons gagnés" hidden>
-      <p class="rs-vlist-title">Tes autres bons gagnés</p>
+    <div class="rs-vlist" id="vlist" aria-label="Tes bons débloqués" hidden>
+      <p class="rs-vlist-title">Tes bons débloqués</p>
       <div id="vlistRows"></div>
     </div>
 
@@ -446,7 +447,8 @@ h2.ended-title{
 
    CONTRAT API RÉELLE (à implémenter côté backend) :
    POST /api/mystery-box/play        body: {customerId}
-     200 → {prizeId, amount, minOrder, code, expiresAt}
+     200 → {prize:{prizeId, amount, minOrder, code, expiresAt},
+            unlocked:[…]}  ← cascade : le gain + tous les paliers inférieurs
      409 → quota d'essais atteint (MAX_PLAYS par client, côté serveur)
      410 → campagne terminée / stock épuisé
    Le serveur : tire au sort selon les poids ET le stock restant,
@@ -506,10 +508,18 @@ const MockServer = (()=>{
       let won = avail[avail.length-1];
       for(const t of avail){ if((r-=t.weight)<0){ won=t; break; } }
       won.stock--;
-      return {status:200, prize:{
-        prizeId:won.prizeId, amount:won.amount, minOrder:won.minOrder,
-        code:won.code, expiresAt:CAMPAIGN_END.toISOString(),
-      }};
+      /* CASCADE : gagner un palier débloque aussi tous les paliers
+         inférieurs (mécanique du jeu GDB). ⚠ Finance : l'exposition
+         budget est multipliée — le "Max Usages" plateforme (150/palier)
+         reste le garde-fou réel côté vouchers.                        */
+      const toPrize = t => ({
+        prizeId:t.prizeId, amount:t.amount, minOrder:t.minOrder,
+        code:t.code, expiresAt:CAMPAIGN_END.toISOString(),
+      });
+      return {status:200,
+        prize: toPrize(won),
+        unlocked: TIERS.filter(t=>t.amount<=won.amount).map(toPrize),
+      };
     }
   };
 })();
@@ -598,7 +608,7 @@ async function play(index, btn){
 
   const prize = res.prize;
   const plays = loadPlays();
-  plays.push({prize, ts:Date.now()});
+  plays.push({prize, unlocked:res.unlocked||[prize], ts:Date.now()});
   savePlays(plays);
   track('play_win', {prizeId:prize.prizeId, amount:prize.amount, attempt:plays.length});
 
@@ -669,7 +679,7 @@ function applyPrize(prize, celebrate){
   const voucher = document.querySelector('.rs-voucher');
   voucher.setAttribute('aria-live','polite');
   $('rsTitle').textContent   = jackpot ? 'GROS LOT !' : 'BRAVO !';
-  $('rsEyebrow').textContent = jackpot ? '🏆 Le maximum possible' : 'Félicitations';
+  $('rsEyebrow').textContent = jackpot ? '🏆 Tous les bons débloqués !' : 'Félicitations';
   $('rsBoxImg').src          = jackpot ? IMG.jackpot : IMG.open;
   $('rvAmount').innerHTML    = prize.amount+' <span>DH</span>';
   $('rvLabel').textContent   = 'de réduction dès '+prize.minOrder+' DH d’achat';
@@ -691,17 +701,19 @@ function applyPrize(prize, celebrate){
   track('reveal_view', {prizeId:prize.prizeId});
 }
 
-/* ── Bons déjà gagnés (dédupliqués — un code par palier) ── */
-function renderVoucherList(current){
-  const seen = {};
-  const others = [];
+/* ── Bons débloqués (cascade, union de tous les jeux, dédupliqués) ── */
+function unlockedVouchers(){
+  const seen = {}, out = [];
   loadPlays().forEach(p=>{
-    const pr = p.prize;
-    if(pr.prizeId !== current.prizeId && !seen[pr.prizeId]){
-      seen[pr.prizeId] = true;
-      others.push(pr);
-    }
+    const arr = (p.unlocked && p.unlocked.length) ? p.unlocked : [p.prize];
+    arr.forEach(pr=>{
+      if(!seen[pr.prizeId]){ seen[pr.prizeId] = true; out.push(pr); }
+    });
   });
+  return out;
+}
+function renderVoucherList(current){
+  const others = unlockedVouchers().filter(pr=>pr.prizeId !== current.prizeId);
   const list = $('vlist');
   if(!others.length){ list.hidden = true; return; }
   others.sort((a,b)=>b.amount-a.amount);
