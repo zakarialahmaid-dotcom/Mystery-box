@@ -62,10 +62,11 @@ body{
 @keyframes slideDown{0%{opacity:0;transform:translateY(-14px)}100%{opacity:1;transform:none}}
 @keyframes rise{0%{opacity:0;transform:translateY(16px)}100%{opacity:1;transform:none}}
 @keyframes boxIn{0%{opacity:0;transform:scale(.7)}70%{transform:scale(1.04)}100%{opacity:1;transform:scale(1)}}
-@keyframes pop{0%{transform:scale(1)}35%{transform:scale(1.16) rotate(-2deg)}70%{transform:scale(.96) rotate(1.5deg)}100%{transform:scale(1)}}
 @keyframes shakeBox{0%,100%{transform:rotate(0) scale(1)}15%{transform:rotate(-6deg) scale(1.04)}30%{transform:rotate(6deg) scale(1.06)}45%{transform:rotate(-7deg) scale(1.08)}60%{transform:rotate(7deg) scale(1.1)}75%{transform:rotate(-5deg) scale(1.08)}90%{transform:rotate(4deg) scale(1.05)}}
 @keyframes ringBurst{0%{transform:scale(.6);opacity:1}100%{transform:scale(1.3);opacity:0}}
-@keyframes ctaBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+/* nudge périodique : deux petits bonds toutes les ~4.5s — attire l'œil
+   sans le bombardement d'un rebond perpétuel */
+@keyframes ctaNudge{0%,14%,100%{transform:translateY(0)}4%{transform:translateY(-5px)}8%{transform:translateY(0)}11%{transform:translateY(-3px)}}
 @keyframes wipeIn{0%{transform:scaleY(0)}45%{transform:scaleY(1)}55%{transform:scaleY(1)}100%{transform:scaleY(0)}}
 @keyframes wiggle{0%,100%{transform:rotate(0)}20%{transform:rotate(-4deg)}40%{transform:rotate(4deg)}60%{transform:rotate(-3deg)}80%{transform:rotate(3deg)}}
 @keyframes confettiFall{0%{transform:translateY(-10vh) rotate(0)}100%{transform:translateY(110vh) rotate(720deg)}}
@@ -73,10 +74,8 @@ body{
 @keyframes codeIn{0%{opacity:0;transform:translateY(10px) scale(.95)}100%{opacity:1;transform:none}}
 @keyframes rowIn{0%{opacity:0;transform:translateX(-12px)}100%{opacity:1;transform:none}}
 @keyframes idleFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-@keyframes dotPulse{0%,100%{opacity:1}50%{opacity:.3}}
-@keyframes tickPop{0%{transform:translateX(-50%) scale(.5);opacity:0}100%{transform:translateX(-50%) scale(1);opacity:1}}
-@keyframes tickSlam{0%{transform:translateX(-50%) scale(2);opacity:0}55%{transform:translateX(-50%) scale(.92);opacity:1}80%{transform:translateX(-50%) scale(1.08)}100%{transform:translateX(-50%) scale(1)}}
-@keyframes stageShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
+@keyframes chipPop{0%{transform:scale(1)}45%{transform:scale(1.25)}100%{transform:scale(1)}}
+@keyframes tickSquash{0%{transform:scale(1)}100%{transform:scale(.9)}}
 
 #play-transition{
   position:fixed;inset:0;background:var(--orange);z-index:9999;
@@ -181,7 +180,6 @@ h1.hd-title{
 .box:nth-child(5){animation-delay:.29s}
 .box:active:not(:disabled){transform:scale(.96);border-color:var(--orange);}
 .box:disabled{cursor:default;}
-.box.dimmed{opacity:.35;background:var(--bg);}
 .box.dimmed-hard{opacity:.1;}
 /* mise en scène : la boîte choisie devient la vedette */
 .box.staged{
@@ -191,12 +189,6 @@ h1.hd-title{
 }
 .box.shaking{border-color:var(--orange);background:#fff;animation:shakeBox .6s ease;}
 .box.staged.shaking{animation:shakeBox .6s ease;transform:scale(1.16);}
-.box.chosen{background:#fff;border-color:var(--orange);border-width:2px;animation:pop .5s cubic-bezier(.2,.8,.3,1.2);}
-.box .ring{
-  position:absolute;inset:-3px;border:3px solid var(--yellow);
-  border-radius:inherit;pointer-events:none;
-  animation:ringBurst .55s ease forwards;
-}
 .box img{
   width:62%;height:62%;object-fit:contain;pointer-events:none;-webkit-user-drag:none;
   transition:transform .25s;
@@ -204,34 +196,62 @@ h1.hd-title{
 }
 .box:nth-child(odd) img{animation-delay:.8s;}
 .box:nth-child(3) img{animation-delay:1.6s;}
-.box.chosen img{transform:scale(1.12);animation:none;}
-.box.staged img,.box.dimmed img,.box.dimmed-hard img{animation:none;}
+.box.staged img,.box.dimmed-hard img{animation:none;}
 
-/* compteur flottant au-dessus de la boîte choisie */
-.tick-float{
-  position:absolute;top:calc(-1 * clamp(38px,10vw,48px));left:50%;transform:translateX(-50%);
-  z-index:7;white-space:nowrap;pointer-events:none;
-  font-family:var(--H1);font-weight:900;font-size:clamp(17px,4.8vw,22px);
+
+/* ── suspense : pop-up centré au-dessus de la page voucher ── */
+.rs-suspense-hide{display:none !important;}
+#suspense-overlay{
+  position:fixed;inset:0;z-index:9000;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(64,59,59,.65);
+  opacity:0;pointer-events:none;transition:opacity .3s ease;
+}
+#suspense-overlay.show{opacity:1;pointer-events:auto;}
+.sus-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r-l);
+  padding:var(--s-6) var(--s-5);text-align:center;
+  width:min(84%,320px);
+  animation:susPop .35s cubic-bezier(.2,.8,.3,1.2);
+}
+@keyframes susPop{0%{transform:scale(.7);opacity:0}100%{transform:scale(1);opacity:1}}
+.sus-eyebrow{
+  font-size:clamp(11px,3vw,13px);font-weight:700;color:var(--ink-2);
+  text-transform:uppercase;letter-spacing:.08em;margin-bottom:var(--s-4);
+}
+.sus-box-wrap{
+  position:relative;display:inline-block;margin:0 auto;
+}
+.sus-box{
+  width:clamp(120px,34vw,160px);height:clamp(120px,34vw,160px);
+  object-fit:contain;display:block;
+  -webkit-user-drag:none;
+}
+.sus-ring{
+  position:absolute;inset:-8px;border:4px solid var(--yellow);
+  border-radius:50%;pointer-events:none;
+  animation:ringBurst .6s ease forwards;
+}
+.tick-rs.landing{animation:tickSquash .28s ease forwards;}
+#susTick{margin-top:var(--s-4);}
+.ladder-chip.pop-new{animation:chipPop .5s cubic-bezier(.2,.8,.3,1.2);}
+/* les numéros TOMBENT dans la pastille (sens de lecture machine à sous) */
+@keyframes tickPopC{0%{transform:translateY(-14px) scale(.85);opacity:0}70%{transform:translateY(2px) scale(1.02);opacity:1}100%{transform:translateY(0) scale(1)}}
+@keyframes tickSlamC{0%{transform:scale(2);opacity:0}55%{transform:scale(.92);opacity:1}80%{transform:scale(1.08)}100%{transform:scale(1)}}
+.tick-rs{
+  display:inline-block;margin-top:var(--s-3);position:relative;z-index:3;
+  font-family:var(--H1);font-weight:900;font-size:clamp(20px,5.6vw,26px);
   color:var(--orange-d);background:#fff;border:2px solid var(--orange);
-  border-radius:var(--r-full);padding:6px 16px;
-  animation:tickPop .16s ease;
+  border-radius:var(--r-full);padding:8px 22px;white-space:nowrap;
+  animation:tickPopC .16s ease;
 }
-.tick-float.nothing{color:var(--ink-3);border-color:var(--border);}
-.tick-float.win{
+.tick-rs.nothing{color:var(--ink-3);border-color:var(--border);}
+.tick-rs.gold{border-color:var(--yellow);background:var(--tint);}
+.tick-rs.win{
   color:#fff;background:var(--orange);border-color:var(--orange-d);
-  font-size:clamp(20px,5.6vw,26px);
-  animation:tickSlam .45s cubic-bezier(.2,.8,.3,1.2);
+  font-size:clamp(24px,6.6vw,30px);
+  animation:tickSlamC .45s cubic-bezier(.2,.8,.3,1.2);
 }
-.game-card.stage-shake{animation:stageShake .3s ease;}
-
-/* rareté : les gros paliers (50/60) font briller la boîte AVANT la révélation */
-@keyframes auraPulse{0%{transform:scale(1);opacity:.9}100%{transform:scale(1.16);opacity:0}}
-.box.gold-aura{border-color:var(--yellow);background:var(--tint);}
-.box.gold-aura::after{
-  content:'';position:absolute;inset:-5px;border:3px solid var(--yellow);
-  border-radius:inherit;pointer-events:none;animation:auraPulse 1s ease infinite;
-}
-.tick-float.gold{border-color:var(--yellow);background:var(--tint);color:var(--orange-d);}
 
 /* collection : chips gagnées sur le lobby */
 .ladder-chip.won{background:var(--orange);border-color:var(--orange-d);color:#fff;}
@@ -240,7 +260,6 @@ h1.hd-title{
   font-size:clamp(12px,3.3vw,14px);font-weight:900;color:var(--ink);
   text-transform:uppercase;letter-spacing:.04em;
 }
-.box.chosen .box-lbl{color:var(--orange-d);}
 
 /* échelle des gains — transparence (pratique standard wheel-of-fortune) */
 .ladder{
@@ -356,7 +375,7 @@ h2.rs-title{
   font-size:clamp(15px,4.3vw,18px);text-transform:uppercase;letter-spacing:.04em;
   cursor:pointer;text-decoration:none;
   box-shadow:var(--push),0 6px 20px rgba(255,153,0,.25);
-  animation:ctaBounce 2s ease-in-out infinite;
+  animation:ctaNudge 4.5s ease-in-out infinite;
   transition:transform .1s,box-shadow .1s;touch-action:manipulation;
 }
 .btn-primary:active{transform:translateY(4px);box-shadow:0 0 0 var(--orange-d);animation:none;}
@@ -375,8 +394,6 @@ h2.rs-title{
 .btn-secondary:active{background:var(--bg);border-color:var(--orange);}
 
 /* suspense : ticker façon machine à sous */
-@keyframes tickPulse{0%{transform:scale(1);opacity:.55}50%{transform:scale(1.1);opacity:1}100%{transform:scale(1);opacity:.55}}
-.rv-amount.spinning{color:var(--ink-3);animation:tickPulse .18s ease infinite;}
 .rv-hidden{visibility:hidden;}
 
 /* bons déjà gagnés (cascade, cf. jeu GDB) */
@@ -438,11 +455,6 @@ h2.ended-title{
 }
 .play-error.show{display:block;}
 
-.demo-reset{
-  position:fixed;bottom:8px;left:8px;font-size:10px;color:var(--ink-3);
-  background:none;border:1px solid #d0d0d6;border-radius:6px;padding:4px 8px;
-  min-height:24px;cursor:pointer;font-family:var(--H2);z-index:50;
-}
 #btnMute{
   position:fixed;bottom:8px;right:8px;width:44px;height:44px;border-radius:50%;
   background:var(--card);border:1px solid var(--border);cursor:pointer;
@@ -559,8 +571,19 @@ h2.ended-title{
 
 </div>
 
+<!-- pop-up de suspense : boîte + numéros au centre de l'écran -->
+<div id="suspense-overlay" role="dialog" aria-label="Révélation du gain" aria-hidden="true">
+  <div class="sus-card">
+    <p class="sus-eyebrow">Roulement de tambour…</p>
+    <div class="sus-box-wrap" id="susBoxWrap">
+      <img id="susBox" class="sus-box" src="assets/box-closed.png" alt=""
+           onerror="this.outerHTML='<div class=&quot;ended-emoji&quot;>🎁</div>'">
+    </div>
+    <div id="susTick" class="tick-rs">…</div>
+  </div>
+</div>
+
 <button id="btnMute" type="button" aria-label="Activer ou couper le son">🔊</button>
-<button class="demo-reset" id="demoReset" title="Démo uniquement — à retirer en production">↺ reset démo</button>
 
 <script>
 'use strict';
@@ -644,7 +667,11 @@ const Sfx = (()=>{
    Date au fuseau du Maroc (+01:00), alignée sur "Campaign End Date/Hour". */
 const CAMPAIGN_END = new Date('2026-07-12T23:59:00+01:00');
 const STORE_LINK   = 'https://www.jumia.ma/';           // fallback web
-const DEEP_LINK    = '';  // ex : 'jumia://ma/cart?coupon=' — prioritaire si défini
+/* Lien Adjust "Utiliser mon bon" — identique au jeu Gardien de But :
+   track l'attribution puis deep-link dans l'app (fallback web inclus).
+   Astuce : changer adjust_creative=game en mysterybox pour distinguer
+   l'attribution des deux jeux dans Adjust. */
+const USE_VOUCHER_URL = 'https://aal4.adj.st/ma/mlp-felicitations-profitez-de-votre-remise?adjust_t=itk4eyn_9sytz8o&adjust_campaign=MA&adjust_adgroup=wcgame&adjust_creative=game&adjust_deeplink=jumia%3A%2F%2Fma%2Fmlp-felicitations-profitez-de-votre-remise&adjust_redirect=https%3A%2F%2Fjumia.ma%2Fmlp-felicitations-profitez-de-votre-remise';
 const STORAGE_KEY  = 'jumia_mystery_app_plays';
 const SUSPENSE_MS  = 2000; // durée du roulement avant révélation
 /* Essais ILLIMITÉS : le jeu doit donner la sensation de gagner.
@@ -793,8 +820,14 @@ function updatePlayUI(){
   document.querySelectorAll('#ladderChips .ladder-chip').forEach(chip=>{
     const a = +chip.dataset.amount;
     const won = !!wonAmounts[a];
+    const isNew = won && !chip.classList.contains('won');
     chip.classList.toggle('won', won);
     chip.textContent = (won ? '✓ ' : '') + a + ' DH';
+    if(isNew){ // le bon fraîchement débloqué "pop" sur le lobby
+      chip.classList.remove('pop-new');
+      void chip.offsetWidth;
+      chip.classList.add('pop-new');
+    }
   });
   $('ladderHint').textContent = n >= 5
     ? 'Tout est à toi — profite de tes bons !'
@@ -824,41 +857,84 @@ function setTick(el, v, win){
   el.style.animation = '';
 }
 
-/* compteur de suspense flottant au-dessus de la boîte choisie */
-function boxSuspense(btn, prize){
-  return new Promise(resolve=>{
-    const gold = prize.amount >= 50;
-    // rareté : gros palier = suspense plus long + tick doré
-    const dur = gold ? SUSPENSE_MS + 600 : SUSPENSE_MS;
-    const tick = document.createElement('div');
-    tick.className = 'tick-float' + (gold ? ' gold' : '');
-    btn.appendChild(tick);
-    /* le RIEN tourne dans la roue comme les autres valeurs (tension),
-       mais la roue s'arrête TOUJOURS naturellement sur le vrai gain :
-       décélération continue, dernier tick = le montant gagné.         */
-    const pool = ['RIEN',10,20,30,50,60].filter(v=>v!==prize.amount);
-    const t0 = Date.now();
-    let i = Math.floor(Math.random()*pool.length);
-    (function loop(){
-      const elapsed = Date.now() - t0;
-      if(elapsed >= dur){
-        // ATTERRISSAGE : le dernier tick EST le vrai gain — la roue
-        // s'arrête dessus, courte pause, puis ce MÊME numéro pop (win)
-        setTick(tick, prize.amount);
-        Sfx.play('tick', 1.4);
-        if(navigator.vibrate){ try{ navigator.vibrate(20); }catch(e){} }
-        setTimeout(()=>resolve(tick), 300);
-        return;
-      }
-      setTick(tick, pool[i % pool.length]);
-      Sfx.play('tick', 0.85 + 0.5 * (elapsed / dur)); // pitch qui monte
-      i++;
-      if(navigator.vibrate && elapsed > dur-900){ try{ navigator.vibrate(8); }catch(e){} }
-      // décélération marquée : ~70ms au départ → ~450ms sur les derniers
-      // ticks, le ralentissement se sent de numéro en numéro
-      setTimeout(loop, 70 + 380 * Math.pow(elapsed / dur, 2.2));
-    })();
-  });
+/* ── Suspense en POP-UP centré : la boîte + les numéros défilent au
+   milieu de l'écran, atterrissage, ouverture… puis le pop-up se
+   dissout et la page voucher complète apparaît.                      ── */
+function resultSuspense(prize){
+  const gold = prize.amount >= 50;
+  const dur = gold ? SUSPENSE_MS + 600 : SUSPENSE_MS; // gros lot = plus long
+  const jackpot = prize.prizeId === 'v60';
+
+  // la page derrière reste neutre : rien n'est dévoilé avant la fin
+  $('rsEyebrow').textContent = 'Boîte Mystère';
+  $('rsTitle').textContent = '…';
+  $('rsBoxImg').classList.add('rs-suspense-hide');
+  ['.rs-voucher','.rs-conditions','.rs-actions'].forEach(sel=>
+    document.querySelector(sel).classList.add('rs-suspense-hide'));
+
+  // ouvrir le pop-up (re-déclencher son animation d'entrée)
+  const ov = $('suspense-overlay');
+  const card = ov.querySelector('.sus-card');
+  const boxImg = $('susBox');
+  const tick = $('susTick');
+  boxImg.src = IMG.closed;
+  tick.className = 'tick-rs' + (gold ? ' gold' : '');
+  tick.textContent = '…';
+  card.style.animation = 'none'; void card.offsetWidth; card.style.animation = '';
+  ov.classList.add('show');
+  ov.setAttribute('aria-hidden','false');
+
+  /* le RIEN tourne dans la roue comme les autres valeurs (tension),
+     mais la roue s'arrête TOUJOURS naturellement sur le vrai gain.   */
+  const pool = ['RIEN',10,20,30,50,60].filter(v=>v!==prize.amount);
+  const t0 = Date.now();
+  let i = Math.floor(Math.random()*pool.length);
+  (function loop(){
+    const elapsed = Date.now() - t0;
+    if(elapsed >= dur){
+      // ATTERRISSAGE : dernier tick = le vrai gain, squash d'anticipation…
+      setTick(tick, prize.amount);
+      tick.classList.add('landing');
+      Sfx.play('tick', 1.4);
+      if(navigator.vibrate){ try{ navigator.vibrate(20); }catch(e){} }
+      setTimeout(()=>{
+        // …PAYOFF dans le pop-up : halo, la boîte s'ouvre, le numéro pop
+        tick.classList.remove('landing');
+        setTick(tick, prize.amount, true);
+        boxImg.src = jackpot ? IMG.jackpot : IMG.open;
+        boxImg.style.animation = 'wiggle .6s ease';
+        const ring = document.createElement('span');
+        ring.className = 'sus-ring';
+        $('susBoxWrap').appendChild(ring);
+        setTimeout(()=>ring.remove(), 700);
+        Sfx.play('open');
+        Sfx.play(jackpot ? 'jackpot' : 'win');
+        if(navigator.vibrate){ try{ navigator.vibrate(jackpot ? [40,60,90] : [30,50,40]); }catch(e){} }
+        confetti(jackpot ? 44 : 26);
+        // …le pop-up se dissout, la page voucher complète apparaît
+        setTimeout(()=>{
+          ov.classList.remove('show');
+          ov.setAttribute('aria-hidden','true');
+          boxImg.style.animation = '';
+          $('rsBoxImg').classList.remove('rs-suspense-hide');
+          ['.rs-voucher','.rs-conditions','.rs-actions'].forEach(sel=>{
+            const el = document.querySelector(sel);
+            el.classList.remove('rs-suspense-hide');
+            // relancer l'animation d'entrée en cascade
+            el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+          });
+          applyPrize(prize, true, {confetti:false}); // déjà tirés au payoff
+        }, 1100);
+      }, 300);
+      return;
+    }
+    setTick(tick, pool[i % pool.length]);
+    Sfx.play('tick', 0.85 + 0.5 * (elapsed / dur)); // pitch qui monte
+    i++;
+    if(navigator.vibrate && elapsed > dur-900){ try{ navigator.vibrate(8); }catch(e){} }
+    // décélération : ~70ms au départ → ~450ms sur les derniers ticks
+    setTimeout(loop, 70 + 380 * Math.pow(elapsed / dur, 2.2));
+  })();
 }
 
 async function play(index, btn){
@@ -904,53 +980,34 @@ async function play(index, btn){
   updatePlayUI(); // rafraîchir le compteur "Mes bons" immédiatement
   track('play_win', {prizeId:prize.prizeId, amount:prize.amount, attempt:plays.length});
 
-  // rareté : la boîte "brille différemment" pour les gros paliers
-  if(prize.amount >= 50 && !rm) btn.classList.add('gold-aura');
-
-  // 3-4 · compteur flottant : montants qui défilent, arrêt sur RIEN…
-  let tick = null;
-  if(!rm) tick = await boxSuspense(btn, prize);
-
-  // 5 · PAYOFF : la boîte s'ouvre, halo, slam du montant, secousse écran
-  btn.classList.remove('gold-aura');
-  btn.classList.add('chosen');
-  const ring = document.createElement('span');
-  ring.className = 'ring';
-  btn.appendChild(ring);
-  const im = btn.querySelector('img,.img-fallback');
-  if(im && im.tagName==='IMG') im.src = prize.prizeId==='v60' ? IMG.jackpot : IMG.open;
-  if(tick) setTick(tick, prize.amount, true);
-  const card = document.querySelector('.game-card');
-  card.classList.add('stage-shake');
-  setTimeout(()=>card.classList.remove('stage-shake'), 350);
-  Sfx.play('open');
-  Sfx.play(prize.prizeId==='v60' ? 'jackpot' : 'win');
-  if(navigator.vibrate){ try{ navigator.vibrate(prize.prizeId==='v60' ? [40,60,90] : [30,50,40]); }catch(e){} }
-  confetti(prize.prizeId==='v60' ? 30 : 14); // avant-goût sur l'écran jeu
-
-  // 6 · savourer, puis volet orange vers la récompense détaillée
-  await wait(rm ? 200 : 1000);
+  // 3 · transition rapide : tout le suspense se joue sur la page voucher
+  await wait(rm ? 100 : 250);
   const pt = $('play-transition');
   pt.classList.add('go');
   Sfx.play('whoosh');
   await wait(350);
-  if(tick) tick.remove();
-  showResult(prize, {celebrate:true});
+  showResult(prize, {suspense:true});
   await wait(400);
   pt.classList.remove('go');
   playing = false;
 }
 
 /* ── Écran résultat ──
-   Le suspense se joue désormais SUR la boîte (écran jeu) : ici on
-   délivre directement la récompense, avec slam + confettis si gagné. */
+   Mode suspense : boîte fermée + numéros qui défilent, atterrissage,
+   ouverture, PUIS le reste de la page apparaît. Sinon (restauration
+   au rechargement) : contenu direct sans cérémonie. */
 function showResult(prize, opts){
   opts = opts || {};
   showScreen('screen-result');
-  applyPrize(prize, opts.celebrate === true);
+  if(opts.suspense && !reducedMotion()){
+    resultSuspense(prize);
+  } else {
+    applyPrize(prize, opts.celebrate === true || opts.suspense === true);
+  }
 }
 
-function applyPrize(prize, celebrate){
+function applyPrize(prize, celebrate, opts){
+  opts = opts || {};
   const jackpot = prize.prizeId === 'v60';
   const voucher = document.querySelector('.rs-voucher');
   voucher.setAttribute('aria-live','polite');
@@ -978,8 +1035,7 @@ function applyPrize(prize, celebrate){
       expiryEl.classList.remove('code-in');
     }, 900);
   }
-  const link = DEEP_LINK ? DEEP_LINK + encodeURIComponent(prize.code) : STORE_LINK;
-  $('btnUse').href = link;
+  $('btnUse').href = USE_VOUCHER_URL;
   const n = unlockedVouchers().length;
   const bAll = $('btnAllVouchers');
   bAll.hidden = false;
@@ -989,7 +1045,7 @@ function applyPrize(prize, celebrate){
   $('rsTitle').focus({preventScroll:true});
   startExpiry(new Date(prize.expiresAt));
   if(celebrate){
-    confetti(jackpot ? 44 : 26);
+    if(opts.confetti !== false) confetti(jackpot ? 44 : 26);
     if(navigator.vibrate){ try{ navigator.vibrate(jackpot ? [40,60,80] : [20,40,30]); }catch(e){} }
   }
   track('reveal_view', {prizeId:prize.prizeId});
@@ -1043,7 +1099,7 @@ function renderVouchersScreen(){
       track('copy_code', {source:'vouchers_screen'});
     });
   });
-  $('btnUseAll').href = STORE_LINK;
+  $('btnUseAll').href = USE_VOUCHER_URL;
   fitScreen();
 }
 let vouchersReturn = 'screen-play'; // écran d'origine pour le retour
@@ -1168,11 +1224,6 @@ $('btnMute').addEventListener('click', ()=>{
   track('mute_toggle', {muted:m});
 });
 
-/* ── Reset démo — SUPPRIMER EN PRODUCTION ── */
-$('demoReset').addEventListener('click', ()=>{
-  Store.del(STORAGE_KEY);
-  location.reload();
-});
 </script>
 </body>
 </html>
