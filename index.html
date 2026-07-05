@@ -264,6 +264,52 @@ h2.rs-title{
 .rs-note{
   text-align:center;font-size:clamp(9px,2.3vw,10px);color:var(--ink-2);line-height:1.5;
 }
+.btn-secondary{
+  display:flex;align-items:center;justify-content:center;width:100%;
+  min-height:44px;background:var(--card);color:var(--ink);
+  border:1px solid var(--border);border-radius:var(--r-m);
+  padding:clamp(12px,3.2vw,15px);font-family:var(--H1);font-weight:900;
+  font-size:clamp(12px,3.3vw,14px);text-transform:uppercase;letter-spacing:.04em;
+  cursor:pointer;text-decoration:none;transition:background .15s,border-color .15s;
+  touch-action:manipulation;
+}
+.btn-secondary:active{background:var(--bg);border-color:var(--orange);}
+
+/* suspense : ticker façon machine à sous */
+@keyframes tickPulse{0%{transform:scale(1);opacity:.55}50%{transform:scale(1.1);opacity:1}100%{transform:scale(1);opacity:.55}}
+.rv-amount.spinning{color:var(--ink-3);animation:tickPulse .18s ease infinite;}
+.rv-hidden{visibility:hidden;}
+
+/* bons déjà gagnés (cascade, cf. jeu GDB) */
+.rs-vlist{margin:var(--s-3) var(--s-6) 0;display:flex;flex-direction:column;gap:var(--s-2);}
+.rs-vlist-title{
+  font-size:clamp(8px,2.1vw,9.5px);font-weight:700;color:var(--ink-2);
+  text-transform:uppercase;letter-spacing:.08em;text-align:center;
+}
+.vrow{
+  display:flex;align-items:center;gap:var(--s-3);
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r-m);
+  padding:var(--s-2) var(--s-3);
+}
+.vrow-amount{
+  font-family:var(--H1);font-weight:900;font-size:clamp(14px,3.9vw,17px);
+  color:var(--orange);flex-shrink:0;min-width:52px;
+}
+.vrow-body{flex:1;min-width:0;text-align:left;}
+.vrow-code{
+  font-family:var(--H1);font-weight:900;font-size:clamp(11px,3vw,13px);
+  color:var(--ink);letter-spacing:.06em;-webkit-user-select:text;user-select:text;
+}
+.vrow-meta{font-size:clamp(8px,2.1vw,10px);color:var(--ink-2);margin-top:1px;}
+.vrow-copy{
+  flex-shrink:0;min-height:36px;background:var(--tint);
+  border:1.5px solid rgba(255,153,0,.45);color:var(--orange-d);
+  border-radius:var(--r-s);padding:7px 12px;
+  font-family:var(--H1);font-weight:900;font-size:clamp(9px,2.4vw,11px);
+  text-transform:uppercase;cursor:pointer;transition:background .12s;
+  touch-action:manipulation;
+}
+.vrow-copy:active{background:#ffe9c7;}
 
 /* ══════════ ÉCRAN CAMPAGNE TERMINÉE ══════════ */
 #screen-ended{align-items:center;justify-content:center;text-align:center;padding:var(--s-8) var(--s-6);}
@@ -310,8 +356,8 @@ h2.ended-title{
         <div class="info-chip-lbl">Fin de l'offre</div>
       </div>
       <div class="info-chip">
-        <div class="info-chip-val hi">1×</div>
-        <div class="info-chip-lbl">Par client</div>
+        <div class="info-chip-val hi" id="attemptsChip">3 / 3</div>
+        <div class="info-chip-lbl">Essais restants</div>
       </div>
     </div>
 
@@ -360,9 +406,15 @@ h2.ended-title{
       <div class="rs-cond-row"><span class="rs-cond-dot" aria-hidden="true"></span><span>Hors <b>smartphones</b> et <b>épicerie</b>.</span></div>
     </div>
 
+    <div class="rs-vlist" id="vlist" aria-label="Tes autres bons gagnés" hidden>
+      <p class="rs-vlist-title">Tes autres bons gagnés</p>
+      <div id="vlistRows"></div>
+    </div>
+
     <div class="rs-actions">
       <a class="btn-primary" id="btnUse" href="#">Utiliser mon bon</a>
-      <p class="rs-note">Ton code reste disponible ici et sera appliqué au paiement.</p>
+      <button class="btn-secondary" id="btnReplay" type="button" hidden>Rejouer</button>
+      <p class="rs-note">Tes codes restent disponibles ici et seront appliqués au paiement.</p>
     </div>
   </section>
 
@@ -395,7 +447,7 @@ h2.ended-title{
    CONTRAT API RÉELLE (à implémenter côté backend) :
    POST /api/mystery-box/play        body: {customerId}
      200 → {prizeId, amount, minOrder, code, expiresAt}
-     409 → déjà joué (renvoyer le gain existant)
+     409 → quota d'essais atteint (MAX_PLAYS par client, côté serveur)
      410 → campagne terminée / stock épuisé
    Le serveur : tire au sort selon les poids ET le stock restant,
    décrémente l'inventaire, signe le résultat, log l'événement.
@@ -427,7 +479,9 @@ function track(event, props){
 const CAMPAIGN_END = new Date('2026-07-12T23:59:00+01:00');
 const STORE_LINK   = 'https://www.jumia.ma/';           // fallback web
 const DEEP_LINK    = '';  // ex : 'jumia://ma/cart?coupon=' — prioritaire si défini
-const STORAGE_KEY  = 'jumia_mystery_app_play';
+const STORAGE_KEY  = 'jumia_mystery_app_plays';
+const MAX_PLAYS    = 3;   // essais par client — le serveur fait foi en prod
+const SUSPENSE_MS  = 2000; // durée du roulement avant révélation
 
 /* ═══════════════ MOCK SERVER — SUPPRIMER EN PRODUCTION ═══════════════
    Simule le backend, Y COMPRIS la gestion de stock (Max Usages = 150
@@ -483,33 +537,52 @@ function boxImgHTML(kind){
 /* ── Utils ── */
 const $ = id => document.getElementById(id);
 function pad(n){ return String(n).padStart(2,'0'); }
-function saveState(o){ Store.set(STORAGE_KEY, JSON.stringify(o)); }
-function loadState(){ try{ return JSON.parse(Store.get(STORAGE_KEY)); }catch(e){ return null; } }
+function reducedMotion(){
+  return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   $(id).classList.add('active');
 }
 
+/* ── État : liste des jeux effectués ── */
+function loadPlays(){
+  try{ const p = JSON.parse(Store.get(STORAGE_KEY)); return Array.isArray(p) ? p : []; }
+  catch(e){ return []; }
+}
+function savePlays(p){ Store.set(STORAGE_KEY, JSON.stringify(p)); }
+function attemptsLeft(){ return Math.max(0, MAX_PLAYS - loadPlays().length); }
+
 /* ── Écran jeu : rendu des boîtes ── */
 const boxesEl = $('boxes');
-for(let i=0;i<4;i++){
-  const b = document.createElement('button');
-  b.className = 'box';
-  b.type = 'button';
-  b.dataset.index = i;
-  b.setAttribute('aria-label','Boîte mystère numéro '+(i+1));
-  b.innerHTML = boxImgHTML('closed') + '<span class="box-lbl">Boîte '+(i+1)+'</span>';
-  b.addEventListener('click', ()=>play(i, b));
-  boxesEl.appendChild(b);
+function renderBoxes(){
+  boxesEl.innerHTML = '';
+  for(let i=0;i<4;i++){
+    const b = document.createElement('button');
+    b.className = 'box';
+    b.type = 'button';
+    b.dataset.index = i;
+    b.setAttribute('aria-label','Boîte mystère numéro '+(i+1));
+    b.innerHTML = boxImgHTML('closed') + '<span class="box-lbl">Boîte '+(i+1)+'</span>';
+    b.addEventListener('click', ()=>play(i, b));
+    boxesEl.appendChild(b);
+  }
+}
+function updatePlayUI(){
+  const left = attemptsLeft();
+  $('attemptsChip').textContent = left+' / '+MAX_PLAYS;
+  $('gameHint').innerHTML = left === 1
+    ? 'Dernier essai — <b>choisis bien !</b>'
+    : 'Il te reste <b>'+left+' essais</b> — choisis une boîte !';
 }
 
 /* ── Flux de jeu ── */
 let playing = false;
 async function play(index, btn){
-  if(playing || loadState()) return;
+  if(playing || attemptsLeft() <= 0) return;
   playing = true;
   document.querySelectorAll('.box').forEach(b=>{ b.disabled = true; });
-  track('play_click', {box:index});
+  track('play_click', {box:index, attempt:loadPlays().length+1});
 
   const res = await apiPlay().catch(()=>({status:0}));
   if(res.status !== 200){
@@ -524,27 +597,77 @@ async function play(index, btn){
   }
 
   const prize = res.prize;
-  saveState({index, prize, ts:Date.now()});
-  track('play_win', {prizeId:prize.prizeId, amount:prize.amount});
+  const plays = loadPlays();
+  plays.push({prize, ts:Date.now()});
+  savePlays(plays);
+  track('play_win', {prizeId:prize.prizeId, amount:prize.amount, attempt:plays.length});
 
-  // révélation locale
+  // révélation locale de la boîte (sans dévoiler le montant : suspense ensuite)
   btn.classList.add('chosen');
   const im = btn.querySelector('img,.img-fallback');
   if(im && im.tagName==='IMG') im.src = prize.prizeId==='v60' ? IMG.jackpot : IMG.open;
   document.querySelectorAll('.box').forEach(b=>{
     if(+b.dataset.index !== index) b.classList.add('dimmed');
   });
-  if(navigator.vibrate){ try{ navigator.vibrate(prize.prizeId==='v60' ? [40,60,80] : 30); }catch(e){} }
+  if(navigator.vibrate){ try{ navigator.vibrate(30); }catch(e){} }
 
   const pt = $('play-transition');
   setTimeout(()=>{ pt.classList.add('go'); }, 550);
-  setTimeout(()=>{ showResult(prize, true); }, 900);
+  setTimeout(()=>{ showResult(prize, {suspense:true}); }, 900);
   setTimeout(()=>{ pt.classList.remove('go'); playing=false; }, 1300);
 }
 
 /* ── Écran résultat ── */
-function showResult(prize, celebrate){
+let suspenseInt = null;
+function showResult(prize, opts){
+  opts = opts || {};
+  showScreen('screen-result');
+  if(opts.suspense && !reducedMotion()){
+    runSuspense(prize);
+  } else {
+    applyPrize(prize, opts.suspense === true);
+  }
+}
+
+/* roulement façon machine à sous : les montants défilent en ralentissant */
+function runSuspense(prize){
+  const amounts = [10,20,30,50,60].filter(a=>a!==prize.amount);
+  const voucher = document.querySelector('.rs-voucher');
+  voucher.setAttribute('aria-live','off'); // pas de spam lecteur d'écran
+  $('rsEyebrow').textContent = 'Roulement de tambour…';
+  $('rsTitle').textContent   = 'SUSPENSE…';
+  $('rsBoxImg').src          = IMG.closed;
+  $('rvLabel').textContent   = 'Qu\'y a-t-il dans ta boîte ?';
+  document.querySelector('.rv-code-row').classList.add('rv-hidden');
+  document.querySelector('.rv-expiry').classList.add('rv-hidden');
+  $('vlist').hidden = true;
+  $('btnReplay').hidden = true;
+  const amountEl = $('rvAmount');
+  amountEl.classList.add('spinning');
+
+  const t0 = Date.now();
+  let i = Math.floor(Math.random()*amounts.length);
+  if(suspenseInt) clearTimeout(suspenseInt);
+  (function tickLoop(){
+    const elapsed = Date.now() - t0;
+    if(elapsed >= SUSPENSE_MS){
+      amountEl.classList.remove('spinning');
+      applyPrize(prize, true);
+      return;
+    }
+    amountEl.innerHTML = amounts[i % amounts.length]+' <span>DH</span>';
+    i++;
+    if(navigator.vibrate && elapsed > SUSPENSE_MS-600){ try{ navigator.vibrate(10); }catch(e){} }
+    // easing : le défilement ralentit (80ms → ~320ms)
+    const delay = 80 + 240 * Math.pow(elapsed / SUSPENSE_MS, 2);
+    suspenseInt = setTimeout(tickLoop, delay);
+  })();
+}
+
+function applyPrize(prize, celebrate){
   const jackpot = prize.prizeId === 'v60';
+  const voucher = document.querySelector('.rs-voucher');
+  voucher.setAttribute('aria-live','polite');
   $('rsTitle').textContent   = jackpot ? 'GROS LOT !' : 'BRAVO !';
   $('rsEyebrow').textContent = jackpot ? '🏆 Le maximum possible' : 'Félicitations';
   $('rsBoxImg').src          = jackpot ? IMG.jackpot : IMG.open;
@@ -552,28 +675,91 @@ function showResult(prize, celebrate){
   $('rvLabel').textContent   = 'de réduction dès '+prize.minOrder+' DH d’achat';
   $('rvCode').textContent    = prize.code;
   $('condMin').innerHTML     = 'Commande minimum : <b>'+prize.minOrder+' DH</b>.';
+  document.querySelector('.rv-code-row').classList.remove('rv-hidden');
+  document.querySelector('.rv-expiry').classList.remove('rv-hidden');
   const link = DEEP_LINK ? DEEP_LINK + encodeURIComponent(prize.code) : STORE_LINK;
   $('btnUse').href = link;
-  showScreen('screen-result');
+  renderVoucherList(prize);
+  updateReplayUI();
   // a11y : porter le focus sur le titre du résultat
   $('rsTitle').focus({preventScroll:true});
   startExpiry(new Date(prize.expiresAt));
-  if(celebrate) confetti(jackpot ? 44 : 26);
+  if(celebrate){
+    confetti(jackpot ? 44 : 26);
+    if(navigator.vibrate){ try{ navigator.vibrate(jackpot ? [40,60,80] : [20,40,30]); }catch(e){} }
+  }
   track('reveal_view', {prizeId:prize.prizeId});
 }
 
+/* ── Bons déjà gagnés (dédupliqués — un code par palier) ── */
+function renderVoucherList(current){
+  const seen = {};
+  const others = [];
+  loadPlays().forEach(p=>{
+    const pr = p.prize;
+    if(pr.prizeId !== current.prizeId && !seen[pr.prizeId]){
+      seen[pr.prizeId] = true;
+      others.push(pr);
+    }
+  });
+  const list = $('vlist');
+  if(!others.length){ list.hidden = true; return; }
+  others.sort((a,b)=>b.amount-a.amount);
+  $('vlistRows').innerHTML = others.map(pr=>
+    '<div class="vrow">'+
+      '<div class="vrow-amount">'+pr.amount+' DH</div>'+
+      '<div class="vrow-body">'+
+        '<div class="vrow-code">'+pr.code+'</div>'+
+        '<div class="vrow-meta">dès '+pr.minOrder+' DH d’achat</div>'+
+      '</div>'+
+      '<button class="vrow-copy" type="button" data-code="'+pr.code+'" aria-label="Copier le code '+pr.code+'">Copier</button>'+
+    '</div>'
+  ).join('');
+  $('vlistRows').querySelectorAll('.vrow-copy').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      copyText(b.dataset.code, ()=>{
+        b.textContent = 'Copié !';
+        setTimeout(()=>{ b.textContent='Copier'; }, 1600);
+      });
+      track('copy_code', {source:'vlist'});
+    });
+  });
+  list.hidden = false;
+}
+
+/* ── Rejouer ── */
+function updateReplayUI(){
+  const left = attemptsLeft();
+  const btn = $('btnReplay');
+  if(left > 0){
+    btn.hidden = false;
+    btn.textContent = 'Rejouer · '+left+' essai'+(left>1?'s':'')+' restant'+(left>1?'s':'');
+  } else {
+    btn.hidden = true;
+  }
+}
+$('btnReplay').addEventListener('click', ()=>{
+  if(attemptsLeft() <= 0) return;
+  track('replay_click', {left:attemptsLeft()});
+  renderBoxes();
+  updatePlayUI();
+  showScreen('screen-play');
+});
+
+/* ── Copie de code (partagé bouton principal + liste) ── */
+function copyText(text, cb){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(cb).catch(()=>fallbackCopy(text, cb));
+  } else fallbackCopy(text, cb);
+}
 $('btnCopy').addEventListener('click', ()=>{
-  const code = $('rvCode').textContent;
-  const done = ()=>{
+  copyText($('rvCode').textContent, ()=>{
     const b = $('btnCopy');
     b.textContent = 'Copié !';
     b.classList.add('copied');
     setTimeout(()=>{ b.textContent='Copier'; b.classList.remove('copied'); }, 1800);
-  };
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(code).then(done).catch(()=>fallbackCopy(code, done));
-  } else fallbackCopy(code, done);
-  track('copy_code');
+  });
+  track('copy_code', {source:'main'});
 });
 function fallbackCopy(text, cb){
   const ta = document.createElement('textarea');
@@ -639,18 +825,20 @@ function enterEnded(){
 /* ── Boot : router selon l'état ── */
 (function boot(){
   track('page_view');
-  const prev = loadState();
+  const plays = loadPlays();
+  const last = plays.length ? plays[plays.length-1] : null;
   const ended = Date.now() >= CAMPAIGN_END.getTime();
-  if(prev && prev.prize){
-    // gain déjà obtenu : toujours accessible jusqu'à expiration
-    if(new Date(prev.prize.expiresAt) - Date.now() > 0){ showResult(prev.prize, false); }
+  renderBoxes();
+  updatePlayUI();
+  if(last && last.prize){
+    // gains déjà obtenus : toujours accessibles jusqu'à expiration
+    if(new Date(last.prize.expiresAt) - Date.now() > 0){ showResult(last.prize, {suspense:false}); }
     else if(ended){ enterEnded(); }
-    else { Store.del(STORAGE_KEY); startCampaignCountdown(); }
+    else { Store.del(STORAGE_KEY); renderBoxes(); updatePlayUI(); }
   } else if(ended){
     enterEnded();
-  } else {
-    startCampaignCountdown();
   }
+  if(!ended) startCampaignCountdown();
 })();
 
 /* ── Reset démo — SUPPRIMER EN PRODUCTION ── */
