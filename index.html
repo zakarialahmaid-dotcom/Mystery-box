@@ -42,7 +42,8 @@ body{
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
 }
 #app{
-  width:100%;max-width:480px;height:100%;
+  width:100%;max-width:480px;
+  height:100vh;height:100dvh; /* toujours la hauteur d'écran exacte */
   display:flex;flex-direction:column;overflow:hidden;position:relative;
   background:var(--bg);
   padding-bottom:env(safe-area-inset-bottom,0);
@@ -717,7 +718,29 @@ function reducedMotion(){
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   $(id).classList.add('active');
+  fitScreen();
 }
+
+/* ── Ajustement à l'écran : TOUT tient toujours en hauteur ──
+   Si le contenu de l'écran actif dépasse la hauteur disponible, on le
+   met à l'échelle (technique du jeu GDB) — jamais de scroll vertical. */
+function fitScreen(){
+  const s = document.querySelector('.screen.active');
+  if(!s) return;
+  s.style.transform = ''; s.style.width = ''; s.style.height = '';
+  const avail = s.parentElement.clientHeight;
+  const need = s.scrollHeight;
+  if(need > avail + 1){
+    const k = avail / need;
+    s.style.transformOrigin = 'top left';
+    s.style.transform = 'scale('+k+')';
+    s.style.width = (100/k)+'%';
+    s.style.height = (100/k)+'%';
+  }
+}
+window.addEventListener('resize', fitScreen);
+window.addEventListener('load', fitScreen);
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(fitScreen);
 
 /* ── État : liste des jeux effectués ── */
 function loadPlays(){
@@ -763,6 +786,7 @@ function updatePlayUI(){
   $('ladderHint').textContent = n >= 5
     ? 'Tout est à toi — profite de tes bons !'
     : 'Plus ton gain est gros, plus tu débloques de bons !';
+  fitScreen();
 }
 
 /* ── Flux de jeu ──
@@ -956,6 +980,7 @@ function applyPrize(prize, celebrate){
     if(navigator.vibrate){ try{ navigator.vibrate(jackpot ? [40,60,80] : [20,40,30]); }catch(e){} }
   }
   track('reveal_view', {prizeId:prize.prizeId});
+  fitScreen();
 }
 
 /* ── Bons débloqués (cascade, union de tous les jeux, dédupliqués) ── */
@@ -1006,6 +1031,7 @@ function renderVouchersScreen(){
     });
   });
   $('btnUseAll').href = STORE_LINK;
+  fitScreen();
 }
 let vouchersReturn = 'screen-play'; // écran d'origine pour le retour
 function openVouchers(from){
