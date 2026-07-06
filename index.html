@@ -49,6 +49,20 @@ body{
   padding-bottom:env(safe-area-inset-bottom,0);
 }
 
+/* écrans courts (petits Android) : chrome compressé, le jeu garde la place */
+@media (max-height:660px){
+  .hd{padding-top:var(--s-3);padding-bottom:var(--s-3);}
+  h1.hd-title{font-size:clamp(24px,7vw,30px);}
+  .info-strip{padding-top:var(--s-3);}
+  .mesbons-bar{min-height:48px;padding-top:var(--s-2);padding-bottom:var(--s-2);}
+  .game-wrap{padding:var(--s-3) var(--s-4);}
+  .game-hint{margin-bottom:var(--s-3);}
+  .ladder{padding-bottom:var(--s-4);}
+  .ladder-chip{padding:7px 13px;}
+  .rs-box-img{width:clamp(84px,20vw,104px);height:clamp(84px,20vw,104px);margin-bottom:calc(-1 * clamp(26px,7vw,34px));}
+  .rs-voucher{padding-top:calc(clamp(26px,7vw,34px) + var(--s-3));}
+}
+
 /* focus visible au clavier — WCAG 2.4.7 */
 :focus{outline:none;}
 :focus-visible{outline:3px solid var(--orange);outline-offset:2px;border-radius:var(--r-s);}
@@ -156,15 +170,19 @@ h1.hd-title{
   text-align:center;margin-bottom:var(--s-4);
 }
 .game-hint b{color:var(--orange);font-weight:700;}
-/* 5 boîtes : 3 en haut, 2 centrées en bas — la grille REMPLIT la hauteur
-   disponible : zéro espace mort, boîtes maximales */
+/* 5 boîtes : 3 en haut, 2 centrées en bas.
+   Mobile : les boîtes restent CARRÉES (aspect-ratio), l'espace vertical
+   excédentaire se répartit autour des rangées — jamais de boîtes étirées */
 .boxes{
   flex:1;min-height:0;
   display:grid;grid-template-columns:repeat(6,1fr);
-  grid-template-rows:1fr 1fr;gap:var(--s-3);
+  align-content:space-evenly;
+  gap:var(--s-3);
 }
 .box{
   grid-column:span 2;
+  aspect-ratio:1/1;width:100%;
+  max-height:clamp(120px,19vh,175px);
   min-height:44px; /* cible tactile WCAG 2.5.5 */
   position:relative;
   border:1.5px solid var(--border);border-radius:var(--r-l);
@@ -212,6 +230,7 @@ h1.hd-title{
   background:var(--card);border:1px solid var(--border);border-radius:var(--r-l);
   padding:var(--s-6) var(--s-5);text-align:center;
   width:min(84%,320px);
+  display:flex;flex-direction:column;align-items:center; /* empilé : boîte PUIS numéros dessous */
   animation:susPop .35s cubic-bezier(.2,.8,.3,1.2);
 }
 @keyframes susPop{0%{transform:scale(.7);opacity:0}100%{transform:scale(1);opacity:1}}
@@ -456,12 +475,15 @@ h2.ended-title{
 .play-error.show{display:block;}
 
 #btnMute{
-  position:fixed;bottom:8px;right:8px;width:44px;height:44px;border-radius:50%;
+  position:fixed;
+  bottom:calc(8px + env(safe-area-inset-bottom,0));right:8px;
+  width:40px;height:40px;border-radius:50%;
   background:var(--card);border:1px solid var(--border);cursor:pointer;
-  font-size:18px;display:flex;align-items:center;justify-content:center;
-  z-index:60;touch-action:manipulation;transition:border-color .15s;
+  font-size:16px;display:flex;align-items:center;justify-content:center;
+  z-index:60;touch-action:manipulation;transition:border-color .15s,opacity .15s;
+  opacity:.85;
 }
-#btnMute:active{border-color:var(--orange);}
+#btnMute:active{border-color:var(--orange);opacity:1;}
 </style>
 </head>
 <body>
