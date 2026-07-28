@@ -635,7 +635,9 @@ const Sfx = (()=>{
 /* ── CONFIG CAMPAGNE ──
    ⚠ PROD : ces valeurs viennent du serveur (config campagne), pas du client.
    Date au fuseau du Maroc (+01:00), alignée sur "Campaign End Date/Hour". */
-const CAMPAIGN_END = new Date('2026-07-12T23:59:00+01:00');
+/* Plus de date d'expiration : la campagne est toujours ouverte.
+   (Valeur lointaine gardée uniquement pour l'échéance des bons.) */
+const CAMPAIGN_END = new Date('2099-12-31T23:59:00+01:00');
 const STORE_LINK   = 'https://www.jumia.ma/';           // fallback web
 /* Lien Adjust "Utiliser mon bon" — identique au jeu Gardien de But :
    track l'attribution puis deep-link dans l'app (fallback web inclus).
@@ -665,7 +667,6 @@ const MockServer = (()=>{
   ];
   return {
     play(){
-      if(Date.now() >= CAMPAIGN_END.getTime()) return {status:410};
       const avail = TIERS.filter(t=>t.stock>0);
       if(!avail.length) return {status:410};
       /* PITY / ESCALADE (cf. compteur de pitié Genshin) : chaque partie
