@@ -17,7 +17,6 @@
 @font-face{font-family:'HelveticaText';src:url('https://raw.githubusercontent.com/Madzack69/Fonts/main/Helvetica.ttf') format('truetype');font-weight:500;font-display:swap;}
 /* ⚠ PROD : auto-héberger les fontes sur l'infra Jumia (licence Helvetica
    requise). raw.githubusercontent.com n'est pas un CDN. Fallback: Arial. */
-
 :root{
   /* couleurs */
   --bg:#F1F1F2; --card:#ffffff; --border:#E4E4E6;
@@ -48,7 +47,6 @@ body{
   background:var(--bg);
   padding-bottom:env(safe-area-inset-bottom,0);
 }
-
 /* écrans courts (petits Android) : chrome compressé, le jeu garde la place */
 @media (max-height:660px){
   .hd{padding-top:var(--s-3);padding-bottom:var(--s-3);}
@@ -62,16 +60,13 @@ body{
   .rs-box-img{width:clamp(84px,20vw,104px);height:clamp(84px,20vw,104px);margin-bottom:calc(-1 * clamp(26px,7vw,34px));}
   .rs-voucher{padding-top:calc(clamp(26px,7vw,34px) + var(--s-3));}
 }
-
 /* focus visible au clavier — WCAG 2.4.7 */
 :focus{outline:none;}
 :focus-visible{outline:3px solid var(--orange);outline-offset:2px;border-radius:var(--r-s);}
-
 /* mouvement réduit — WCAG 2.3.3 */
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;}
 }
-
 @keyframes fadeIn{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:none}}
 @keyframes slideDown{0%{opacity:0;transform:translateY(-14px)}100%{opacity:1;transform:none}}
 @keyframes rise{0%{opacity:0;transform:translateY(16px)}100%{opacity:1;transform:none}}
@@ -90,23 +85,19 @@ body{
 @keyframes idleFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 @keyframes chipPop{0%{transform:scale(1)}45%{transform:scale(1.25)}100%{transform:scale(1)}}
 @keyframes tickSquash{0%{transform:scale(1)}100%{transform:scale(.9)}}
-
 #play-transition{
   position:fixed;inset:0;background:var(--orange);z-index:9999;
   pointer-events:none;transform:scaleY(0);transform-origin:bottom;
 }
 #play-transition.go{animation:wipeIn .7s cubic-bezier(.76,0,.24,1) forwards;}
-
 .confetti{
   position:fixed;top:0;width:10px;height:14px;z-index:9998;pointer-events:none;
   animation:confettiFall linear forwards;
 }
-
 /* ══════════ ÉCRAN JEU ══════════ */
 .screen{flex:1;min-height:0;display:none;flex-direction:column;overflow:hidden;animation:fadeIn .25s ease;}
 .screen.active{display:flex;}
 /* pas de scroll : fitScreen() garantit que tout tient en hauteur */
-
 .hd{
   flex:0 0 auto;background:var(--orange);position:relative;overflow:hidden;
   padding:calc(var(--s-4) + env(safe-area-inset-top,0)) var(--s-6) var(--s-4);
@@ -127,7 +118,6 @@ h1.hd-title{
   display:block;font-style:normal;font-size:.6em;
   color:rgba(255,255,255,.8);letter-spacing:.02em;margin-top:var(--s-1);
 }
-
 /* barre "Mes bons" : horizontale, lisible, cliquable */
 .info-strip{
   flex:0 0 auto;
@@ -155,7 +145,6 @@ h1.hd-title{
   color:var(--orange);font-family:var(--H1);font-weight:900;
   font-size:clamp(20px,5.5vw,24px);line-height:1;flex-shrink:0;
 }
-
 .game-wrap{
   flex:1;min-height:0;display:flex;flex-direction:column;
   padding:var(--s-4);
@@ -215,8 +204,6 @@ h1.hd-title{
 .box:nth-child(odd) img{animation-delay:.8s;}
 .box:nth-child(3) img{animation-delay:1.6s;}
 .box.staged img,.box.dimmed-hard img{animation:none;}
-
-
 /* ── suspense : pop-up centré au-dessus de la page voucher ── */
 .rs-suspense-hide{display:none !important;}
 #suspense-overlay{
@@ -271,7 +258,6 @@ h1.hd-title{
   font-size:clamp(24px,6.6vw,30px);
   animation:tickSlamC .45s cubic-bezier(.2,.8,.3,1.2);
 }
-
 /* collection : chips gagnées sur le lobby */
 .ladder-chip.won{background:var(--orange);border-color:var(--orange-d);color:#fff;}
 .box .img-fallback{font-size:clamp(30px,9vw,44px);line-height:1;}
@@ -279,7 +265,6 @@ h1.hd-title{
   font-size:clamp(12px,3.3vw,14px);font-weight:900;color:var(--ink);
   text-transform:uppercase;letter-spacing:.04em;
 }
-
 /* échelle des gains — transparence (pratique standard wheel-of-fortune) */
 .ladder{
   flex:0 0 auto;padding:0 var(--s-4) var(--s-5);
@@ -297,7 +282,6 @@ h1.hd-title{
 .ladder-chip.top{background:var(--tint);border-color:rgba(255,153,0,.45);color:var(--orange-d);}
 .ladder-chip.nothing{color:var(--ink-3);border-style:dashed;}
 .rv-amount.nothing{color:var(--ink-3);}
-
 /* ══════════ ÉCRAN RÉSULTAT ══════════ */
 /* entrées en cascade à chaque affichage de l'écran (restart via display) */
 #screen-result .rs-top{animation:slideDown .35s ease backwards;}
@@ -323,15 +307,13 @@ h2.rs-title{
   animation:wiggle .6s ease;-webkit-user-drag:none;
   position:relative;z-index:2;
 }
-
 .rs-voucher{
   margin:0 var(--s-4);
   background:var(--card);border:1px solid var(--border);border-radius:var(--r-l);
   padding:calc(clamp(34px,9vw,44px) + var(--s-3)) var(--s-5) var(--s-5);text-align:center;
 }
 .rv-amount.slam{animation:amountSlam .45s cubic-bezier(.2,.8,.3,1.2);}
-.rv-code-row.code-in,.rv-expiry.code-in{animation:codeIn .35s ease backwards;}
-.rv-expiry.code-in{animation-delay:.1s;}
+.rv-code-row.code-in{animation:codeIn .35s ease backwards;}
 .rv-amount{
   font-family:var(--H1);font-weight:900;color:var(--orange);
   font-size:clamp(46px,13vw,64px);line-height:.88;letter-spacing:-.02em;
@@ -359,11 +341,6 @@ h2.rs-title{
 }
 .btn-copy:active{transform:translateY(4px);box-shadow:0 0 0 var(--orange-d);}
 .btn-copy.copied{background:var(--green);box-shadow:0 4px 0 #178f61;}
-.rv-expiry{
-  font-size:clamp(10px,2.6vw,12px);font-weight:700;color:var(--orange-d);
-  margin-top:var(--s-3);font-variant-numeric:tabular-nums;
-}
-
 .rs-conditions{
   margin:var(--s-4) var(--s-4) 0;
   background:var(--card);border:1px solid var(--border);border-radius:var(--r-m);
@@ -379,7 +356,6 @@ h2.rs-title{
   width:6px;height:6px;border-radius:50%;background:var(--orange);
   flex-shrink:0;margin-top:6px;
 }
-
 .rs-actions{
   flex:0 0 auto;margin-top:auto;
   padding:var(--s-4) var(--s-4) calc(var(--s-6) + env(safe-area-inset-bottom,0));
@@ -411,10 +387,8 @@ h2.rs-title{
   touch-action:manipulation;
 }
 .btn-secondary:active{background:var(--bg);border-color:var(--orange);}
-
 /* suspense : ticker façon machine à sous */
 .rv-hidden{visibility:hidden;}
-
 /* bons déjà gagnés (cascade, cf. jeu GDB) */
 .rs-vlist{margin:var(--s-3) var(--s-4) 0;display:flex;flex-direction:column;gap:var(--s-2);}
 .rs-vlist-title{
@@ -456,7 +430,6 @@ h2.rs-title{
   margin-top:var(--s-2);
 }
 #screen-vouchers .rs-vlist{margin-top:var(--s-4);flex:1;min-height:0;justify-content:center;}
-
 /* ══════════ ÉCRAN CAMPAGNE TERMINÉE ══════════ */
 #screen-ended{align-items:center;justify-content:center;text-align:center;padding:var(--s-8) var(--s-6);}
 .ended-emoji{font-size:clamp(40px,12vw,56px);margin-bottom:var(--s-3);}
@@ -466,14 +439,12 @@ h2.ended-title{
 }
 .ended-sub{font-size:clamp(12px,3.2vw,14px);color:var(--ink-2);max-width:280px;margin:0 auto var(--s-5);}
 #screen-ended .btn-primary{max-width:300px;animation:none;}
-
 /* erreur serveur */
 .play-error{
   display:none;text-align:center;font-size:clamp(10px,2.7vw,12px);
   color:var(--red);font-weight:700;margin-top:var(--s-3);
 }
 .play-error.show{display:block;}
-
 #btnMute{
   position:fixed;
   bottom:calc(8px + env(safe-area-inset-bottom,0));right:8px;
@@ -487,11 +458,8 @@ h2.ended-title{
 </style>
 </head>
 <body>
-
 <div id="play-transition" aria-hidden="true"></div>
-
 <div id="app">
-
   <!-- ═══ ÉCRAN 1 : JEU ═══ -->
   <main id="screen-play" class="screen active" aria-label="Jeu boîte mystère">
     <header class="hd">
@@ -500,7 +468,6 @@ h2.ended-title{
       <p class="hd-eyebrow">Édition spéciale</p>
       <h1 class="hd-title">Boîte Mystère<em>Qu'y a-t-il dans ta boîte ?</em></h1>
     </header>
-
     <div class="info-strip">
       <button class="mesbons-bar" id="chipVouchers" type="button" aria-label="Voir mes bons débloqués">
         <span class="mb-ico" aria-hidden="true">🎟️</span>
@@ -509,7 +476,6 @@ h2.ended-title{
         <span class="chip-arrow" aria-hidden="true">›</span>
       </button>
     </div>
-
     <div class="game-wrap">
       <div class="game-card">
         <p class="game-hint" id="gameHint" tabindex="-1">Une seule chance — <b>choisis bien !</b></p>
@@ -517,7 +483,6 @@ h2.ended-title{
         <p class="play-error" id="playError" role="alert">Oups, petit souci de connexion. Réessaie !</p>
       </div>
     </div>
-
     <div class="ladder" aria-label="Ta collection de bons">
       <p class="ladder-title" id="ladderTitle">Ta collection</p>
       <div class="ladder-chips" id="ladderChips">
@@ -530,7 +495,6 @@ h2.ended-title{
       <p class="ladder-title" style="margin-top:var(--s-2)" id="ladderHint">Plus ton gain est gros, plus tu débloques de bons !</p>
     </div>
   </main>
-
   <!-- ═══ ÉCRAN 2 : RÉSULTAT ═══ -->
   <section id="screen-result" class="screen" aria-label="Ton gain">
     <div class="rs-top">
@@ -539,7 +503,6 @@ h2.ended-title{
       <img class="rs-box-img" id="rsBoxImg" src="assets/box-open.png" alt="Boîte ouverte" draggable="false"
            onerror="this.outerHTML='<div class=&quot;ended-emoji&quot;>🎁</div>'">
     </div>
-
     <div class="rs-voucher" role="status" aria-live="polite">
       <div class="rv-amount" id="rvAmount">10 <span>DH</span></div>
       <p class="rv-label" id="rvLabel">de réduction dès 120 DH d'achat</p>
@@ -547,15 +510,12 @@ h2.ended-title{
         <div class="rv-code" id="rvCode">—</div>
         <button class="btn-copy" id="btnCopy" aria-label="Copier le code promo">Copier</button>
       </div>
-      <p class="rv-expiry">Expire dans <span id="expiryTimer">--:--:--</span></p>
     </div>
-
     <div class="rs-conditions" aria-label="Conditions du bon">
       <div class="rs-cond-row"><span class="rs-cond-dot" aria-hidden="true"></span><span>Valable <b>1 fois</b> par client, sur l'app et le site.</span></div>
       <div class="rs-cond-row"><span class="rs-cond-dot" aria-hidden="true"></span><span id="condMin">Commande minimum : <b>120 DH</b>.</span></div>
       <div class="rs-cond-row"><span class="rs-cond-dot" aria-hidden="true"></span><span>Hors <b>smartphones</b> et <b>épicerie</b>.</span></div>
     </div>
-
     <div class="rs-actions">
       <a class="btn-primary" id="btnUse" href="#">Utiliser mon bon</a>
       <div class="rs-actions-row">
@@ -565,7 +525,6 @@ h2.ended-title{
       <p class="rs-note">Tes codes restent disponibles ici et seront appliqués au paiement.</p>
     </div>
   </section>
-
   <!-- ═══ ÉCRAN 2b : MES BONS ═══ -->
   <section id="screen-vouchers" class="screen" aria-label="Tous mes bons">
     <div class="rs-top vch-head">
@@ -582,7 +541,6 @@ h2.ended-title{
       <p class="rs-note">Un code par palier, cumulables sur des commandes séparées.</p>
     </div>
   </section>
-
   <!-- ═══ ÉCRAN 3 : CAMPAGNE TERMINÉE ═══ -->
   <section id="screen-ended" class="screen" aria-label="Offre terminée">
     <div class="ended-emoji" aria-hidden="true">📦</div>
@@ -590,9 +548,7 @@ h2.ended-title{
     <p class="ended-sub">Cette édition de la Boîte Mystère est finie. Reviens vite — d'autres surprises arrivent.</p>
     <a class="btn-primary" id="btnEndedShop" href="#">Continuer mes achats</a>
   </section>
-
 </div>
-
 <!-- pop-up de suspense : boîte + numéros au centre de l'écran -->
 <div id="suspense-overlay" role="dialog" aria-label="Révélation du gain" aria-hidden="true">
   <div class="sus-card">
@@ -604,14 +560,11 @@ h2.ended-title{
     <div id="susTick" class="tick-rs">…</div>
   </div>
 </div>
-
 <button id="btnMute" type="button" aria-label="Activer ou couper le son">🔊</button>
-
 <script>
 'use strict';
 /* ═══════════════════════════════════════════════════════════════════
    BOÎTE MYSTÈRE — VERSION APP · prototype production-ready
-
    ARCHITECTURE
    ┌─────────────┐   apiPlay()   ┌──────────────────────────────┐
    │  UI / JEU   │ ────────────► │  MOCK SERVER (à remplacer)   │
@@ -620,7 +573,6 @@ h2.ended-title{
    │   AUCUN code│
    │   ni odds)  │
    └─────────────┘
-
    CONTRAT API RÉELLE (à implémenter côté backend) :
    POST /api/mystery-box/play        body: {customerId}
      200 → {prize:{prizeId, amount, minOrder, code, expiresAt},
@@ -631,7 +583,6 @@ h2.ended-title{
    décrémente l'inventaire, signe le résultat, log l'événement.
    Le client ne doit JAMAIS recevoir la table complète des codes.
 ═══════════════════════════════════════════════════════════════════ */
-
 /* ── Storage sûr (WebViews stricts : localStorage peut throw) ── */
 const Store = (()=>{
   let mem = {};
@@ -643,14 +594,12 @@ const Store = (()=>{
     del(k){ try{ if(ok) localStorage.removeItem(k); }catch(e){} delete mem[k]; },
   };
 })();
-
 /* ── Analytics (brancher GTM/segment : dataLayer déjà standard) ── */
 function track(event, props){
   const payload = Object.assign({event:'mb_'+event, ts:Date.now()}, props||{});
   (window.dataLayer = window.dataLayer || []).push(payload);
   // console.debug('[track]', payload);
 }
-
 /* ── Sons — déposer les fichiers dans assets/sfx/ (noms ci-dessous).
    Fichiers manquants = silence propre, le jeu fonctionne sans.        ── */
 const Sfx = (()=>{
@@ -683,7 +632,6 @@ const Sfx = (()=>{
     isMuted(){ return muted; },
   };
 })();
-
 /* ── CONFIG CAMPAGNE ──
    ⚠ PROD : ces valeurs viennent du serveur (config campagne), pas du client.
    Date au fuseau du Maroc (+01:00), alignée sur "Campaign End Date/Hour". */
@@ -699,7 +647,6 @@ const SUSPENSE_MS  = 2000; // durée du roulement avant révélation
 /* Essais ILLIMITÉS : le jeu doit donner la sensation de gagner.
    ⚠ PROD : garder un rate-limit serveur (ex. N jeux/min par client)
    pour l'anti-abus — invisible pour un joueur normal. */
-
 /* ═══════════════ MOCK SERVER — SUPPRIMER EN PRODUCTION ═══════════════
    Simule le backend, Y COMPRIS la gestion de stock (Max Usages = 150
    par palier dans les templates WOF WC W3). Les poids respectent le
@@ -757,7 +704,6 @@ async function apiPlay(){
   return MockServer.play();
 }
 /* ═══════════════════════ FIN MOCK SERVER ═══════════════════════ */
-
 /* ── Assets ── */
 const IMG = {
   closed:'assets/box-closed.png',
@@ -770,7 +716,6 @@ function boxImgHTML(kind){
   return '<img src="'+IMG[kind]+'" alt="" draggable="false" '+
          'onerror="this.outerHTML=\'<span class=&quot;img-fallback&quot;>'+FALLBACK_EMOJI[kind]+'</span>\'">';
 }
-
 /* ── Utils ── */
 const $ = id => document.getElementById(id);
 function pad(n){ return String(n).padStart(2,'0'); }
@@ -782,7 +727,6 @@ function showScreen(id){
   $(id).classList.add('active');
   fitScreen();
 }
-
 /* ── Ajustement à l'écran : TOUT tient toujours en hauteur ──
    Si le contenu de l'écran actif dépasse la hauteur disponible, on le
    met à l'échelle (technique du jeu GDB) — jamais de scroll vertical. */
@@ -803,14 +747,12 @@ function fitScreen(){
 window.addEventListener('resize', fitScreen);
 window.addEventListener('load', fitScreen);
 if(document.fonts && document.fonts.ready) document.fonts.ready.then(fitScreen);
-
 /* ── État : liste des jeux effectués ── */
 function loadPlays(){
   try{ const p = JSON.parse(Store.get(STORAGE_KEY)); return Array.isArray(p) ? p : []; }
   catch(e){ return []; }
 }
 function savePlays(p){ Store.set(STORAGE_KEY, JSON.stringify(p)); }
-
 /* ── Écran jeu : rendu des boîtes ── */
 const boxesEl = $('boxes');
 const BOX_COUNT = 5; // une boîte par palier de bon
@@ -856,7 +798,6 @@ function updatePlayUI(){
     : 'Plus ton gain est gros, plus tu débloques de bons !';
   fitScreen();
 }
-
 /* ── Flux de jeu ──
    Rythme "loot box" (cf. Hextech/LoL, Ankama) : anticipation → montée
    de tension → near-miss → payoff percussif → récompense détaillée.
@@ -868,7 +809,6 @@ function updatePlayUI(){
    6 · volet orange → écran récompense (slam + confettis)              */
 let playing = false;
 const wait = ms => new Promise(r=>setTimeout(r,ms));
-
 function setTick(el, v, win){
   el.classList.toggle('nothing', v==='RIEN');
   el.classList.toggle('win', !!win);
@@ -878,7 +818,6 @@ function setTick(el, v, win){
   void el.offsetWidth;
   el.style.animation = '';
 }
-
 /* ── Suspense en POP-UP centré : la boîte + les numéros défilent au
    milieu de l'écran, atterrissage, ouverture… puis le pop-up se
    dissout et la page voucher complète apparaît.                      ── */
@@ -886,14 +825,12 @@ function resultSuspense(prize){
   const gold = prize.amount >= 50;
   const dur = gold ? SUSPENSE_MS + 600 : SUSPENSE_MS; // gros lot = plus long
   const jackpot = prize.prizeId === 'v60';
-
   // la page derrière reste neutre : rien n'est dévoilé avant la fin
   $('rsEyebrow').textContent = 'Boîte Mystère';
   $('rsTitle').textContent = '…';
   $('rsBoxImg').classList.add('rs-suspense-hide');
   ['.rs-voucher','.rs-conditions','.rs-actions'].forEach(sel=>
     document.querySelector(sel).classList.add('rs-suspense-hide'));
-
   // ouvrir le pop-up (re-déclencher son animation d'entrée)
   const ov = $('suspense-overlay');
   const card = ov.querySelector('.sus-card');
@@ -905,7 +842,6 @@ function resultSuspense(prize){
   card.style.animation = 'none'; void card.offsetWidth; card.style.animation = '';
   ov.classList.add('show');
   ov.setAttribute('aria-hidden','false');
-
   /* le RIEN tourne dans la roue comme les autres valeurs (tension),
      mais la roue s'arrête TOUJOURS naturellement sur le vrai gain.   */
   const pool = ['RIEN',10,20,30,50,60].filter(v=>v!==prize.amount);
@@ -958,13 +894,11 @@ function resultSuspense(prize){
     setTimeout(loop, 70 + 380 * Math.pow(elapsed / dur, 2.2));
   })();
 }
-
 async function play(index, btn){
   if(playing) return;
   playing = true;
   track('play_click', {box:index, attempt:loadPlays().length+1});
   const rm = reducedMotion();
-
   // 1 · mise en scène : la boîte choisie est la vedette
   document.querySelectorAll('.box').forEach(b=>{
     b.disabled = true;
@@ -972,7 +906,6 @@ async function play(index, btn){
   });
   btn.classList.add('staged');
   if(navigator.vibrate){ try{ navigator.vibrate(15); }catch(e){} }
-
   // 2 · secousse d'anticipation — le serveur répond PENDANT (zéro attente)
   if(!rm) btn.classList.add('shaking');
   const [res] = await Promise.all([
@@ -980,7 +913,6 @@ async function play(index, btn){
     wait(rm ? 150 : 650),
   ]);
   btn.classList.remove('shaking');
-
   if(res.status !== 200){
     if(res.status === 410){ enterEnded(); playing=false; return; }
     // erreur réseau : réactiver et informer (pas d'échec silencieux)
@@ -994,14 +926,12 @@ async function play(index, btn){
     playing = false;
     return;
   }
-
   const prize = res.prize;
   const plays = loadPlays();
   plays.push({prize, unlocked:res.unlocked||[prize], ts:Date.now()});
   savePlays(plays);
   updatePlayUI(); // rafraîchir le compteur "Mes bons" immédiatement
   track('play_win', {prizeId:prize.prizeId, amount:prize.amount, attempt:plays.length});
-
   // 3 · transition rapide : tout le suspense se joue sur la page voucher
   await wait(rm ? 100 : 250);
   const pt = $('play-transition');
@@ -1013,7 +943,6 @@ async function play(index, btn){
   pt.classList.remove('go');
   playing = false;
 }
-
 /* ── Écran résultat ──
    Mode suspense : boîte fermée + numéros qui défilent, atterrissage,
    ouverture, PUIS le reste de la page apparaît. Sinon (restauration
@@ -1027,7 +956,6 @@ function showResult(prize, opts){
     applyPrize(prize, opts.celebrate === true || opts.suspense === true);
   }
 }
-
 function applyPrize(prize, celebrate, opts){
   opts = opts || {};
   const jackpot = prize.prizeId === 'v60';
@@ -1042,19 +970,15 @@ function applyPrize(prize, celebrate, opts){
   $('rvCode').textContent    = prize.code;
   $('condMin').innerHTML     = 'Commande minimum : <b>'+prize.minOrder+' DH</b>.';
   const codeRow = document.querySelector('.rv-code-row');
-  const expiryEl = document.querySelector('.rv-expiry');
   codeRow.classList.remove('rv-hidden');
-  expiryEl.classList.remove('rv-hidden');
   // révélation "slam" : le montant claque, le code glisse dessous
   if(celebrate){
     const amountEl = $('rvAmount');
     amountEl.classList.add('slam');
     codeRow.classList.add('code-in');
-    expiryEl.classList.add('code-in');
     setTimeout(()=>{
       amountEl.classList.remove('slam');
       codeRow.classList.remove('code-in');
-      expiryEl.classList.remove('code-in');
     }, 900);
   }
   $('btnUse').href = USE_VOUCHER_URL;
@@ -1065,7 +989,6 @@ function applyPrize(prize, celebrate, opts){
   $('btnReplay').hidden = false;
   // a11y : porter le focus sur le titre du résultat
   $('rsTitle').focus({preventScroll:true});
-  startExpiry(new Date(prize.expiresAt));
   if(celebrate){
     if(opts.confetti !== false) confetti(jackpot ? 44 : 26);
     if(navigator.vibrate){ try{ navigator.vibrate(jackpot ? [40,60,80] : [20,40,30]); }catch(e){} }
@@ -1073,7 +996,6 @@ function applyPrize(prize, celebrate, opts){
   track('reveal_view', {prizeId:prize.prizeId});
   fitScreen();
 }
-
 /* ── Bons débloqués (cascade, union de tous les jeux, dédupliqués) ── */
 function unlockedVouchers(){
   const seen = {}, out = [];
@@ -1140,7 +1062,6 @@ $('btnVchBack').addEventListener('click', ()=>{
   if(h && h.focus) h.focus({preventScroll:true});
 });
 $('btnUseAll').addEventListener('click', ()=>track('use_click', {source:'vouchers_screen'}));
-
 /* ── Rejouer (illimité — le jeu doit donner envie de continuer) ── */
 $('btnReplay').addEventListener('click', ()=>{
   track('replay_click', {plays:loadPlays().length});
@@ -1148,7 +1069,6 @@ $('btnReplay').addEventListener('click', ()=>{
   updatePlayUI();
   showScreen('screen-play');
 });
-
 /* ── Copie de code (partagé bouton principal + liste) ── */
 function copyText(text, cb){
   Sfx.play('copy');
@@ -1176,7 +1096,6 @@ function fallbackCopy(text, cb){
   cb();
 }
 $('btnUse').addEventListener('click', ()=>track('use_click'));
-
 /* ── Confettis (couleurs de marque, léger, respecte reduced-motion) ── */
 function confetti(n){
   if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -1193,22 +1112,6 @@ function confetti(n){
     setTimeout(()=>c.remove(), 3600);
   }
 }
-
-/* ── Compteurs temps réel (fin de campagne = urgence RÉELLE) ── */
-let expiryInt = null;
-function startExpiry(end){
-  const el = $('expiryTimer');
-  if(expiryInt) clearInterval(expiryInt);
-  const tick = ()=>{
-    const left = end - Date.now();
-    if(left <= 0){ el.textContent = 'expiré'; clearInterval(expiryInt); return; }
-    const d=Math.floor(left/864e5), h=Math.floor(left%864e5/36e5),
-          m=Math.floor(left%36e5/6e4), s=Math.floor(left%6e4/1e3);
-    el.textContent = (d>0? d+'j ':'')+pad(h)+':'+pad(m)+':'+pad(s);
-  };
-  tick();
-  expiryInt = setInterval(tick, 1000);
-}
 /* veille silencieuse de fin de campagne (plus de compte à rebours UI) */
 function watchCampaignEnd(){
   setInterval(()=>{ if(Date.now() >= CAMPAIGN_END.getTime()) enterEnded(); }, 60000);
@@ -1218,7 +1121,6 @@ function enterEnded(){
   showScreen('screen-ended');
   track('campaign_ended_view');
 }
-
 /* ── Boot : router selon l'état ── */
 (function boot(){
   track('page_view');
@@ -1237,7 +1139,6 @@ function enterEnded(){
   }
   if(!ended) watchCampaignEnd();
 })();
-
 /* ── Bouton son ── */
 $('btnMute').textContent = Sfx.isMuted() ? '🔇' : '🔊';
 $('btnMute').addEventListener('click', ()=>{
@@ -1245,7 +1146,6 @@ $('btnMute').addEventListener('click', ()=>{
   $('btnMute').textContent = m ? '🔇' : '🔊';
   track('mute_toggle', {muted:m});
 });
-
 </script>
 </body>
 </html>
