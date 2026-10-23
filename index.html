@@ -259,7 +259,7 @@ h1.hd-title{
   animation:tickSlamC .45s cubic-bezier(.2,.8,.3,1.2);
 }
 /* collection : chips gagnées sur le lobby */
-.ladder-chip.won{background:var(--orange);border-color:var(--orange-d);color:#fff;}
+.ladder-chip.won,.ladder-chip.top.won{background:var(--orange);border-color:var(--orange-d);color:#fff;}
 .box .img-fallback{font-size:clamp(30px,9vw,44px);line-height:1;}
 .box-lbl{
   font-size:clamp(12px,3.3vw,14px);font-weight:900;color:var(--ink);
@@ -472,7 +472,7 @@ h2.ended-title{
       <button class="mesbons-bar" id="chipVouchers" type="button" aria-label="Voir mes bons débloqués">
         <span class="mb-ico" aria-hidden="true">🎟️</span>
         <span class="mb-txt">Mes bons</span>
-        <span class="mb-count" id="attemptsChip">0 / 5</span>
+        <span class="mb-count" id="attemptsChip">0</span>
         <span class="chip-arrow" aria-hidden="true">›</span>
       </button>
     </div>
@@ -513,9 +513,7 @@ h2.ended-title{
     </div>
     <div class="rs-conditions" aria-label="Conditions du bon">
       <div class="rs-cond-row"><span class="rs-cond-dot" aria-hidden="true"></span><span>Chaque code est valable <b>1 fois</b> par client, sur l'app et le site.</span></div>
-      <div class="rs-cond-row"><span class="rs-cond-dot" aria-hidden="true"></span><span id="condMin">Commande minimum : <b>120 DH</b>.</span></div>
-      <div class="rs-cond-row"><span class="rs-cond-dot" aria-hidden="true"></span><span>Hors <b>smartphones</b> et <b>épicerie</b>.</span></div>
-    </div>
+      <div class="rs-cond-row"><span class="rs-cond-dot" aria-hidden="true"></span><span id="condMin">Commande minimum : <b>120 DH</b>.</span></div>    </div>
     <div class="rs-actions">
       <a class="btn-primary" id="btnUse" href="#">Utiliser mon bon</a>
       <div class="rs-actions-row">
@@ -530,7 +528,7 @@ h2.ended-title{
     <div class="rs-top vch-head">
       <p class="rs-eyebrow">Ta collection</p>
       <h2 class="rs-title" id="vchTitle" tabindex="-1">MES BONS</h2>
-      <p class="vch-sub" id="vchSub">0 / 5 bons débloqués</p>
+      <p class="vch-sub" id="vchSub">0 bon débloqué</p>
     </div>
     <div class="rs-vlist" id="vchList">
       <div id="vchRows"></div>
@@ -802,12 +800,11 @@ function renderBoxes(){
 function updatePlayUI(){
   const unlocked = unlockedVouchers();
   const n = unlocked.length;
-  $('attemptsChip').textContent = n+' / 5';
+  // jeu illimité : aucun compteur "/ 5", rien n'indique une fin de partie
+  $('attemptsChip').textContent = n;
   $('gameHint').innerHTML = n === 0
     ? 'Choisis une boîte — <b>bonne chance !</b>'
-    : n >= 5
-      ? '<b>Collection complète !</b> Rejoue pour le plaisir 🎉'
-      : 'Rejoue et débloque les <b>'+(5-n)+' bons restants</b> !';
+    : 'Rejoue autant que tu veux — <b>tente le gros lot !</b>';
   // le ladder reflète TA collection : chips gagnées cochées en orange
   const wonAmounts = {};
   unlocked.forEach(p=>{ wonAmounts[p.amount] = true; });
@@ -823,9 +820,7 @@ function updatePlayUI(){
       chip.classList.add('pop-new');
     }
   });
-  $('ladderHint').textContent = n >= 5
-    ? 'Tout est à toi — profite de tes bons !'
-    : 'Plus ton gain est gros, plus tu débloques de bons !';
+  $('ladderHint').textContent = 'Plus ton gain est gros, plus tu débloques de bons !';
   fitScreen();
 }
 /* ── Flux de jeu ──
@@ -1014,7 +1009,7 @@ function applyPrize(prize, celebrate, opts){
   const n = unlockedVouchers().length;
   const bAll = $('btnAllVouchers');
   bAll.hidden = false;
-  bAll.textContent = '🎟️ Voir tous mes bons ('+n+'/5)';
+  bAll.textContent = '🎟️ Voir tous mes bons ('+n+')';
   $('btnReplay').hidden = false;
   // a11y : porter le focus sur le titre du résultat
   $('rsTitle').focus({preventScroll:true});
@@ -1042,7 +1037,7 @@ function renderVouchersScreen(){
   const unlocked = unlockedVouchers();
   const byAmount = {};
   unlocked.forEach(pr=>{ byAmount[pr.amount] = pr; });
-  $('vchSub').textContent = unlocked.length+' / 5 bons débloqués';
+  $('vchSub').textContent = unlocked.length+(unlocked.length > 1 ? ' bons débloqués' : ' bon débloqué');
   $('vchRows').innerHTML = ALL_AMOUNTS.map(a=>{
     const pr = byAmount[a];
     if(pr){
