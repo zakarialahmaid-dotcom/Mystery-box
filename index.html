@@ -478,8 +478,8 @@ h2.ended-title{
     </div>
     <div class="game-wrap">
       <div class="game-card">
-        <p class="game-hint" id="gameHint" tabindex="-1">Une seule chance — <b>choisis bien !</b></p>
-        <div class="boxes" id="boxes" role="group" aria-label="Choisis une boîte parmi quatre"></div>
+        <p class="game-hint" id="gameHint" tabindex="-1">Choisis une boîte — <b>bonne chance !</b></p>
+        <div class="boxes" id="boxes" role="group" aria-label="Choisis une boîte parmi cinq"></div>
         <p class="play-error" id="playError" role="alert">Oups, petit souci de connexion. Réessaie !</p>
       </div>
     </div>
@@ -512,7 +512,7 @@ h2.ended-title{
       </div>
     </div>
     <div class="rs-conditions" aria-label="Conditions du bon">
-      <div class="rs-cond-row"><span class="rs-cond-dot" aria-hidden="true"></span><span>Valable <b>1 fois</b> par client, sur l'app et le site.</span></div>
+      <div class="rs-cond-row"><span class="rs-cond-dot" aria-hidden="true"></span><span>Chaque code est valable <b>1 fois</b> par client, sur l'app et le site.</span></div>
       <div class="rs-cond-row"><span class="rs-cond-dot" aria-hidden="true"></span><span id="condMin">Commande minimum : <b>120 DH</b>.</span></div>
       <div class="rs-cond-row"><span class="rs-cond-dot" aria-hidden="true"></span><span>Hors <b>smartphones</b> et <b>épicerie</b>.</span></div>
     </div>
@@ -600,33 +600,63 @@ function track(event, props){
   (window.dataLayer = window.dataLayer || []).push(payload);
   // console.debug('[track]', payload);
 }
-/* ── Sons — déposer les fichiers dans assets/sfx/ (noms ci-dessous).
-   Fichiers manquants = silence propre, le jeu fonctionne sans.        ── */
+/* ── Sons — synthétisés en Web Audio : aucun fichier à charger,
+   aucune requête réseau. Navigateur sans Web Audio = silence propre. ── */
 const Sfx = (()=>{
-  const FILES = {
-    tick:    'assets/sfx/tick.mp3',     // tic de roulette (court, sec)
-    nearmiss:'assets/sfx/nearmiss.mp3', // womp descendant (déception feinte)
-    open:    'assets/sfx/open.mp3',     // burst d'ouverture (pop + air)
-    win:     'assets/sfx/win.mp3',      // jingle de gain (2-3 notes montantes)
-    jackpot: 'assets/sfx/jackpot.mp3',  // fanfare + shimmer (gros lot)
-    whoosh:  'assets/sfx/whoosh.mp3',   // transition volet orange
-    copy:    'assets/sfx/copy.mp3',     // clic doux (code copié)
-  };
+  const AC = window.AudioContext || window.webkitAudioContext;
+  let ctx = null;
   let muted = Store.get('mb_muted') === '1';
-  const cache = {};
-  function base(n){
-    if(!cache[n]){ cache[n] = new Audio(FILES[n]); cache[n].preload = 'auto'; }
-    return cache[n];
+  // iOS/Chrome : le contexte audio doit être débloqué par un geste
+  function unlock(){
+    if(!AC) return;
+    try{
+      if(!ctx) ctx = new AC();
+      if(ctx.state === 'suspended') ctx.resume();
+    }catch(e){}
   }
+  ['pointerdown','touchstart','keydown'].forEach(ev=>
+    window.addEventListener(ev, unlock, {passive:true}));
+  function tone(freq, start, dur, type, vol){
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type || 'triangle';
+    o.frequency.setValueAtTime(freq, start);
+    g.gain.setValueAtTime(0.0001, start);
+    g.gain.exponentialRampToValueAtTime(vol || .2, start + .01);
+    g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+    o.connect(g).connect(ctx.destination);
+    o.start(start); o.stop(start + dur + .02);
+  }
+  function noise(start, dur, fromHz, toHz, vol){
+    const len = Math.ceil(ctx.sampleRate * dur);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i] = Math.random()*2 - 1;
+    const src = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    src.buffer = buf;
+    f.type = 'bandpass'; f.Q.value = 1.2;
+    f.frequency.setValueAtTime(fromHz, start);
+    f.frequency.exponentialRampToValueAtTime(toHz, start + dur);
+    g.gain.setValueAtTime(0.0001, start);
+    g.gain.exponentialRampToValueAtTime(vol, start + dur*.3);
+    g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+    src.connect(f).connect(g).connect(ctx.destination);
+    src.start(start); src.stop(start + dur);
+  }
+  const SOUNDS = {
+    tick:   (t,r)=>tone(1100*(r||1), t, .04, 'square', .05),          // tic de roulette
+    open:   t=>{ noise(t, .25, 400, 3000, .25); tone(520, t, .12, 'sine', .15); }, // pop + air
+    win:    t=>[784,988,1319].forEach((f,i)=>tone(f, t+i*.09, .22, 'triangle', .18)), // 3 notes montantes
+    jackpot:t=>{ [523,659,784,1047,1319].forEach((f,i)=>tone(f, t+i*.08, .3, 'triangle', .18));
+                 [2093,2637,3136].forEach((f,i)=>tone(f, t+.45+i*.06, .4, 'sine', .06)); }, // fanfare + shimmer
+    whoosh: t=>noise(t, .35, 300, 2500, .2),                             // volet orange
+    copy:   t=>tone(880, t, .06, 'sine', .12),                           // clic doux
+  };
   return {
     play(n, rate){
-      if(muted || !FILES[n]) return;
-      try{
-        const a = base(n).cloneNode(); // permet les ticks qui se chevauchent
-        if(rate) a.playbackRate = rate;
-        a.volume = .55;
-        a.play().catch(()=>{});
-      }catch(e){}
+      if(muted || !SOUNDS[n]) return;
+      unlock();
+      if(!ctx || ctx.state !== 'running') return;
+      try{ SOUNDS[n](ctx.currentTime + .005, rate); }catch(e){}
     },
     toggle(){ muted = !muted; Store.set('mb_muted', muted ? '1' : '0'); return muted; },
     isMuted(){ return muted; },
@@ -656,8 +686,7 @@ const SUSPENSE_MS  = 2000; // durée du roulement avant révélation
    sort du tirage au lieu de distribuer des codes morts.               */
 const MockServer = (()=>{
   /* Probabilités ÉGALES : 1/5 par palier (pondération identique).
-     Le "RIEN" affiché dans l'UI n'existe pas ici : le joueur gagne
-     TOUJOURS — le rien n'est qu'une mise en scène de suspense. */
+     Le joueur gagne TOUJOURS un bon. */
   const TIERS = [
     { prizeId:'v10', amount:10, minOrder:120, code:'GWC-106694', weight:20, stock:150 },
     { prizeId:'v20', amount:20, minOrder:240, code:'GWC-200814', weight:20, stock:150 },
@@ -805,15 +834,14 @@ function updatePlayUI(){
    1 · tap : la boîte devient la VEDETTE (scale), les autres s'effacent
    2 · secousse d'intensité croissante (le serveur répond pendant)
    3 · compteur flottant AU-DESSUS de la boîte : les montants défilent
-   4 · arrêt sur RIEN… pause dramatique…
+   4 · décélération… atterrissage sur le vrai gain
    5 · la boîte S'OUVRE : halo + slam du vrai montant + secousse écran
    6 · volet orange → écran récompense (slam + confettis)              */
 let playing = false;
 const wait = ms => new Promise(r=>setTimeout(r,ms));
 function setTick(el, v, win){
-  el.classList.toggle('nothing', v==='RIEN');
   el.classList.toggle('win', !!win);
-  el.textContent = v==='RIEN' ? 'RIEN…' : v+' DH';
+  el.textContent = v+' DH';
   // relancer l'animation pop à chaque tick
   el.style.animation = 'none';
   void el.offsetWidth;
@@ -843,9 +871,9 @@ function resultSuspense(prize){
   card.style.animation = 'none'; void card.offsetWidth; card.style.animation = '';
   ov.classList.add('show');
   ov.setAttribute('aria-hidden','false');
-  /* le RIEN tourne dans la roue comme les autres valeurs (tension),
-     mais la roue s'arrête TOUJOURS naturellement sur le vrai gain.   */
-  const pool = ['RIEN',10,20,30,50,60].filter(v=>v!==prize.amount);
+  /* la roue ne fait défiler que des montants réellement gagnables
+     (pas de faux "RIEN") et s'arrête toujours sur le vrai gain.      */
+  const pool = [10,20,30,50,60].filter(v=>v!==prize.amount);
   const t0 = Date.now();
   let i = Math.floor(Math.random()*pool.length);
   (function loop(){
@@ -1130,13 +1158,13 @@ function enterEnded(){
   const ended = Date.now() >= CAMPAIGN_END.getTime();
   renderBoxes();
   updatePlayUI();
-  if(last && last.prize){
-    // gains déjà obtenus : toujours accessibles jusqu'à expiration
-    if(new Date(last.prize.expiresAt) - Date.now() > 0){ showResult(last.prize, {celebrate:false}); }
-    else if(ended){ enterEnded(); }
-    else { Store.del(STORAGE_KEY); renderBoxes(); updatePlayUI(); }
-  } else if(ended){
+  /* le joueur revient toujours sur les boîtes : ses bons restent visibles
+     via la collection et "Mes bons" (pas de retour forcé au dernier gain) */
+  if(ended){
     enterEnded();
+  } else if(last && last.prize && new Date(last.prize.expiresAt) - Date.now() <= 0){
+    // bons expirés : on repart d'une collection vide
+    Store.del(STORAGE_KEY); renderBoxes(); updatePlayUI();
   }
   if(!ended) watchCampaignEnd();
 })();
