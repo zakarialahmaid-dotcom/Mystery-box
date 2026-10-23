@@ -515,7 +515,9 @@ h2.ended-title{
       <div class="rs-cond-row"><span class="rs-cond-dot" aria-hidden="true"></span><span>Chaque code est valable <b>1 fois</b> par client, sur l'app et le site.</span></div>
       <div class="rs-cond-row"><span class="rs-cond-dot" aria-hidden="true"></span><span id="condMin">Commande minimum : <b>120 DH</b>.</span></div>    </div>
     <div class="rs-actions">
-      <a class="btn-primary" id="btnUse" href="#">Utiliser mon bon</a>
+      <!-- target _top : intégré en iframe dans le CMS, jumia.ma refuse
+           d'être affiché dans un cadre (X-Frame-Options) -->
+      <a class="btn-primary" id="btnUse" href="#" target="_top">Utiliser mon bon</a>
       <div class="rs-actions-row">
         <button class="btn-secondary" id="btnAllVouchers" type="button">🎟️ Mes bons</button>
         <button class="btn-secondary" id="btnReplay" type="button">↺ Rejouer</button>
@@ -534,7 +536,7 @@ h2.ended-title{
       <div id="vchRows"></div>
     </div>
     <div class="rs-actions">
-      <a class="btn-primary" id="btnUseAll" href="#">Utiliser mes bons</a>
+      <a class="btn-primary" id="btnUseAll" href="#" target="_top">Utiliser mes bons</a>
       <button class="btn-secondary" id="btnVchBack" type="button">← Retour</button>
       <p class="rs-note">Un code par palier, cumulables sur des commandes séparées.</p>
     </div>
@@ -544,7 +546,7 @@ h2.ended-title{
     <div class="ended-emoji" aria-hidden="true">📦</div>
     <h2 class="ended-title">C'est terminé !</h2>
     <p class="ended-sub">Cette édition de la Boîte Mystère est finie. Reviens vite — d'autres surprises arrivent.</p>
-    <a class="btn-primary" id="btnEndedShop" href="#">Continuer mes achats</a>
+    <a class="btn-primary" id="btnEndedShop" href="#" target="_top">Continuer mes achats</a>
   </section>
 </div>
 <!-- pop-up de suspense : boîte + numéros au centre de l'écran -->
