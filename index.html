@@ -669,8 +669,9 @@ const Sfx = (()=>{
    (Valeur lointaine gardée uniquement pour l'échéance des bons.) */
 const CAMPAIGN_END = new Date('2099-12-31T23:59:00+01:00');
 const STORE_LINK   = 'https://www.jumia.ma/';           // fallback web
-/* Lien "Utiliser mon bon" : page de destination des bons sur jumia.ma */
-const USE_VOUCHER_URL = 'https://www.jumia.ma/mlp-felicitations-profitez-de-votre-remise/';
+/* Lien Adjust "Utiliser mon bon" : track l'attribution puis deep-link
+   dans l'app (fallback web jumia.ma inclus). */
+const USE_VOUCHER_URL = 'https://aal4.adj.st/ma/mlp-felicitations-profitez-de-votre-remise?adjust_t=itk4eyn_9sytz8o&adjust_campaign=MA&adjust_adgroup=wcgame&adjust_creative=game&adjust_deeplink=jumia%3A%2F%2Fma%2Fmlp-felicitations-profitez-de-votre-remise&adjust_redirect=https%3A%2F%2Fjumia.ma%2Fmlp-felicitations-profitez-de-votre-remise';
 const STORAGE_KEY  = 'jumia_mystery_app_plays';
 const SUSPENSE_MS  = 2000; // durée du roulement avant révélation
 /* Essais ILLIMITÉS : le jeu doit donner la sensation de gagner.
