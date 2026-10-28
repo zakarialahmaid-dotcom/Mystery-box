@@ -515,9 +515,11 @@ h2.ended-title{
       <div class="rs-cond-row"><span class="rs-cond-dot" aria-hidden="true"></span><span>Chaque code est valable <b>1 fois</b> par client, sur l'app et le site.</span></div>
       <div class="rs-cond-row"><span class="rs-cond-dot" aria-hidden="true"></span><span id="condMin">Commande minimum : <b>120 DH</b>.</span></div>    </div>
     <div class="rs-actions">
-      <!-- target _top : intégré en iframe dans le CMS, jumia.ma refuse
-           d'être affiché dans un cadre (X-Frame-Options) -->
-      <a class="btn-primary" id="btnUse" href="#" target="_top">Utiliser mon bon</a>
+      <!-- target _blank, comme la Roue de la Fortune : dans l'app Jumia
+           (iOS et Android), une nouvelle fenêtre vers jumia.ma est routée
+           par l'app vers l'écran natif ; _top restait dans la WebView et
+           ouvrait le site web. Hors app, ça ouvre un nouvel onglet. -->
+      <a class="btn-primary" id="btnUse" href="#" target="_blank">Utiliser mon bon</a>
       <div class="rs-actions-row">
         <button class="btn-secondary" id="btnAllVouchers" type="button">🎟️ Mes bons</button>
         <button class="btn-secondary" id="btnReplay" type="button">↺ Rejouer</button>
@@ -536,7 +538,7 @@ h2.ended-title{
       <div id="vchRows"></div>
     </div>
     <div class="rs-actions">
-      <a class="btn-primary" id="btnUseAll" href="#" target="_top">Utiliser mes bons</a>
+      <a class="btn-primary" id="btnUseAll" href="#" target="_blank">Utiliser mes bons</a>
       <button class="btn-secondary" id="btnVchBack" type="button">← Retour</button>
       <p class="rs-note">Un code par palier, cumulables sur des commandes séparées.</p>
     </div>
@@ -546,7 +548,7 @@ h2.ended-title{
     <div class="ended-emoji" aria-hidden="true">📦</div>
     <h2 class="ended-title">C'est terminé !</h2>
     <p class="ended-sub">Cette édition de la Boîte Mystère est finie. Reviens vite — d'autres surprises arrivent.</p>
-    <a class="btn-primary" id="btnEndedShop" href="#" target="_top">Continuer mes achats</a>
+    <a class="btn-primary" id="btnEndedShop" href="#" target="_blank">Continuer mes achats</a>
   </section>
 </div>
 <!-- pop-up de suspense : boîte + numéros au centre de l'écran -->
@@ -669,9 +671,10 @@ const Sfx = (()=>{
    (Valeur lointaine gardée uniquement pour l'échéance des bons.) */
 const CAMPAIGN_END = new Date('2099-12-31T23:59:00+01:00');
 const STORE_LINK   = 'https://www.jumia.ma/';           // fallback web
-/* Lien Adjust "Utiliser mon bon" : track l'attribution puis deep-link
-   dans l'app (fallback web jumia.ma inclus). */
-const USE_VOUCHER_URL = 'https://aal4.adj.st/ma/mlp-felicitations-profitez-de-votre-remise?adjust_t=itk4eyn_9sytz8o&adjust_campaign=MA&adjust_adgroup=wcgame&adjust_creative=game&adjust_deeplink=jumia%3A%2F%2Fma%2Fmlp-felicitations-profitez-de-votre-remise&adjust_redirect=https%3A%2F%2Fjumia.ma%2Fmlp-felicitations-profitez-de-votre-remise';
+/* Lien "Utiliser mon bon" : même lien jumia.ma que la Roue de la Fortune.
+   L'app Jumia reconnaît ses propres liens jumia.ma et ouvre l'écran natif
+   (un lien Adjust ou jumia:// n'est pas routé pareil depuis la WebView iOS). */
+const USE_VOUCHER_URL = 'https://www.jumia.ma/mlp-felicitations-profitez-de-votre-remise/';
 const STORAGE_KEY  = 'jumia_mystery_app_plays';
 const SUSPENSE_MS  = 2000; // durée du roulement avant révélation
 /* Essais ILLIMITÉS : le jeu doit donner la sensation de gagner.
