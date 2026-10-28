@@ -455,22 +455,6 @@ h2.ended-title{
   opacity:.85;
 }
 #btnMute:active{border-color:var(--orange);opacity:1;}
-#appHint{
-  position:fixed;left:50%;transform:translateX(-50%);
-  bottom:calc(var(--s-4) + env(safe-area-inset-bottom,0));
-  width:min(92%,440px);z-index:70;
-  display:none;align-items:center;gap:var(--s-3);
-  background:var(--ink);color:#fff;border-radius:var(--r-m);
-  padding:var(--s-3) var(--s-4);font-size:clamp(12px,3.3vw,14px);font-weight:700;
-}
-#appHint.show{display:flex;}
-#appHint span{flex:1;}
-#appHint a{
-  flex-shrink:0;background:var(--orange);color:#fff;text-decoration:none;
-  border-radius:var(--r-s);padding:8px 12px;font-family:var(--H1);font-weight:900;
-  text-transform:uppercase;font-size:clamp(11px,3vw,13px);
-}
-#appHintClose{background:none;border:none;color:#fff;font-size:16px;cursor:pointer;padding:4px;}
 </style>
 </head>
 <body>
@@ -577,12 +561,6 @@ h2.ended-title{
   </div>
 </div>
 <button id="btnMute" type="button" aria-label="Activer ou couper le son">🔊</button>
-<!-- iOS hors app Jumia : le deep link n'a rien ouvert -->
-<div id="appHint" role="status">
-  <span>Tes bons s'utilisent dans l'app Jumia.</span>
-  <a id="appHintLink" href="#" target="_top">Ouvrir l'app</a>
-  <button id="appHintClose" type="button" aria-label="Fermer">✕</button>
-</div>
 <script>
 'use strict';
 /* ═══════════════════════════════════════════════════════════════════
@@ -694,20 +672,6 @@ const STORE_LINK   = 'https://www.jumia.ma/';           // fallback web
 /* Lien Adjust "Utiliser mon bon" : track l'attribution puis deep-link
    dans l'app (fallback web jumia.ma inclus). */
 const USE_VOUCHER_URL = 'https://aal4.adj.st/ma/mlp-felicitations-profitez-de-votre-remise?adjust_t=itk4eyn_9sytz8o&adjust_campaign=MA&adjust_adgroup=wcgame&adjust_creative=game&adjust_deeplink=jumia%3A%2F%2Fma%2Fmlp-felicitations-profitez-de-votre-remise&adjust_redirect=https%3A%2F%2Fjumia.ma%2Fmlp-felicitations-profitez-de-votre-remise';
-/* iOS : dans la WebView de l'app Jumia, iOS n'ouvre jamais un universal link
-   (lien Adjust https) depuis l'app elle-même — la WebView le charge et finit
-   sur le site web, où les bons ne marchent pas. On y utilise donc directement
-   le schéma de l'app (le même deep link que dans le lien Adjust).
-   WebView iOS = iPhone/iPad sans le jeton "Safari/" dans l'user agent
-   (Safari et Chrome iOS l'ont, eux gardent le lien Adjust). */
-const APP_DEEPLINK = 'jumia://ma/mlp-felicitations-profitez-de-votre-remise';
-function isIOSWebView(){
-  const ua = navigator.userAgent || '';
-  const iOS = /iPhone|iPad|iPod/.test(ua) ||
-              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOS
-  return iOS && !/Safari\//.test(ua);
-}
-function voucherHref(){ return isIOSWebView() ? APP_DEEPLINK : USE_VOUCHER_URL; }
 const STORAGE_KEY  = 'jumia_mystery_app_plays';
 const SUSPENSE_MS  = 2000; // durée du roulement avant révélation
 /* Essais ILLIMITÉS : le jeu doit donner la sensation de gagner.
@@ -1041,7 +1005,7 @@ function applyPrize(prize, celebrate, opts){
       codeRow.classList.remove('code-in');
     }, 900);
   }
-  $('btnUse').href = voucherHref();
+  $('btnUse').href = USE_VOUCHER_URL;
   const n = unlockedVouchers().length;
   const bAll = $('btnAllVouchers');
   bAll.hidden = false;
@@ -1103,7 +1067,7 @@ function renderVouchersScreen(){
       track('copy_code', {source:'vouchers_screen'});
     });
   });
-  $('btnUseAll').href = voucherHref();
+  $('btnUseAll').href = USE_VOUCHER_URL;
   fitScreen();
 }
 let vouchersReturn = 'screen-play'; // écran d'origine pour le retour
@@ -1121,19 +1085,7 @@ $('btnVchBack').addEventListener('click', ()=>{
   const h = vouchersReturn === 'screen-result' ? $('rsTitle') : $('gameHint');
   if(h && h.focus) h.focus({preventScroll:true});
 });
-$('btnUseAll').addEventListener('click', ()=>{
-  track('use_click', {source:'vouchers_screen', deeplink:isIOSWebView()});
-  watchAppOpen();
-});
-/* WebView iOS hors app Jumia (Instagram…) : jumia:// ne fait rien. Si la page
-   est toujours visible après 2,5 s, on propose le lien Adjust (installer /
-   ouvrir l'app) au lieu de laisser le bouton sans effet. */
-function watchAppOpen(){
-  if(!isIOSWebView()) return;
-  setTimeout(()=>{
-    if(document.visibilityState === 'visible') $('appHint').classList.add('show');
-  }, 2500);
-}
+$('btnUseAll').addEventListener('click', ()=>track('use_click', {source:'vouchers_screen'}));
 /* ── Rejouer (illimité — le jeu doit donner envie de continuer) ── */
 $('btnReplay').addEventListener('click', ()=>{
   track('replay_click', {plays:loadPlays().length});
@@ -1167,12 +1119,7 @@ function fallbackCopy(text, cb){
   document.body.removeChild(ta);
   cb();
 }
-$('btnUse').addEventListener('click', ()=>{
-  track('use_click', {deeplink:isIOSWebView()});
-  watchAppOpen();
-});
-$('appHintLink').href = USE_VOUCHER_URL;
-$('appHintClose').addEventListener('click', ()=>$('appHint').classList.remove('show'));
+$('btnUse').addEventListener('click', ()=>track('use_click'));
 /* ── Confettis (couleurs de marque, léger, respecte reduced-motion) ── */
 function confetti(n){
   if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
