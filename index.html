@@ -455,22 +455,6 @@ h2.ended-title{
   opacity:.85;
 }
 #btnMute:active{border-color:var(--orange);opacity:1;}
-#appHint{
-  position:fixed;left:50%;transform:translateX(-50%);
-  bottom:calc(var(--s-4) + env(safe-area-inset-bottom,0));
-  width:min(92%,440px);z-index:70;
-  display:none;align-items:center;gap:var(--s-3);
-  background:var(--ink);color:#fff;border-radius:var(--r-m);
-  padding:var(--s-3) var(--s-4);font-size:clamp(12px,3.3vw,14px);font-weight:700;
-}
-#appHint.show{display:flex;}
-#appHint span{flex:1;}
-#appHint a{
-  flex-shrink:0;background:var(--orange);color:#fff;text-decoration:none;
-  border-radius:var(--r-s);padding:8px 12px;font-family:var(--H1);font-weight:900;
-  text-transform:uppercase;font-size:clamp(11px,3vw,13px);
-}
-#appHintClose{background:none;border:none;color:#fff;font-size:16px;cursor:pointer;padding:4px;}
 </style>
 </head>
 <body>
@@ -531,9 +515,11 @@ h2.ended-title{
       <div class="rs-cond-row"><span class="rs-cond-dot" aria-hidden="true"></span><span>Chaque code est valable <b>1 fois</b> par client, sur l'app et le site.</span></div>
       <div class="rs-cond-row"><span class="rs-cond-dot" aria-hidden="true"></span><span id="condMin">Commande minimum : <b>120 DH</b>.</span></div>    </div>
     <div class="rs-actions">
-      <!-- target _top : intégré en iframe dans le CMS, jumia.ma refuse
-           d'être affiché dans un cadre (X-Frame-Options) -->
-      <a class="btn-primary" id="btnUse" href="#" target="_top">Utiliser mon bon</a>
+      <!-- target _blank, comme la Roue de la Fortune : dans l'app Jumia
+           (iOS et Android), une nouvelle fenêtre vers jumia.ma est routée
+           par l'app vers l'écran natif ; _top restait dans la WebView et
+           ouvrait le site web. Hors app, ça ouvre un nouvel onglet. -->
+      <a class="btn-primary" id="btnUse" href="#" target="_blank">Utiliser mon bon</a>
       <div class="rs-actions-row">
         <button class="btn-secondary" id="btnAllVouchers" type="button">🎟️ Mes bons</button>
         <button class="btn-secondary" id="btnReplay" type="button">↺ Rejouer</button>
@@ -552,7 +538,7 @@ h2.ended-title{
       <div id="vchRows"></div>
     </div>
     <div class="rs-actions">
-      <a class="btn-primary" id="btnUseAll" href="#" target="_top">Utiliser mes bons</a>
+      <a class="btn-primary" id="btnUseAll" href="#" target="_blank">Utiliser mes bons</a>
       <button class="btn-secondary" id="btnVchBack" type="button">← Retour</button>
       <p class="rs-note">Un code par palier, cumulables sur des commandes séparées.</p>
     </div>
@@ -562,7 +548,7 @@ h2.ended-title{
     <div class="ended-emoji" aria-hidden="true">📦</div>
     <h2 class="ended-title">C'est terminé !</h2>
     <p class="ended-sub">Cette édition de la Boîte Mystère est finie. Reviens vite — d'autres surprises arrivent.</p>
-    <a class="btn-primary" id="btnEndedShop" href="#" target="_top">Continuer mes achats</a>
+    <a class="btn-primary" id="btnEndedShop" href="#" target="_blank">Continuer mes achats</a>
   </section>
 </div>
 <!-- pop-up de suspense : boîte + numéros au centre de l'écran -->
@@ -577,12 +563,6 @@ h2.ended-title{
   </div>
 </div>
 <button id="btnMute" type="button" aria-label="Activer ou couper le son">🔊</button>
-<!-- iOS hors app Jumia : le deep link n'a rien ouvert -->
-<div id="appHint" role="status">
-  <span>Tes bons s'utilisent dans l'app Jumia.</span>
-  <a id="appHintLink" href="#" target="_top">Ouvrir l'app</a>
-  <button id="appHintClose" type="button" aria-label="Fermer">✕</button>
-</div>
 <script>
 'use strict';
 /* ═══════════════════════════════════════════════════════════════════
@@ -691,23 +671,10 @@ const Sfx = (()=>{
    (Valeur lointaine gardée uniquement pour l'échéance des bons.) */
 const CAMPAIGN_END = new Date('2099-12-31T23:59:00+01:00');
 const STORE_LINK   = 'https://www.jumia.ma/';           // fallback web
-/* Lien Adjust "Utiliser mon bon" : track l'attribution puis deep-link
-   dans l'app (fallback web jumia.ma inclus). */
-const USE_VOUCHER_URL = 'https://aal4.adj.st/ma/mlp-felicitations-profitez-de-votre-remise?adjust_t=itk4eyn_9sytz8o&adjust_campaign=MA&adjust_adgroup=wcgame&adjust_creative=game&adjust_deeplink=jumia%3A%2F%2Fma%2Fmlp-felicitations-profitez-de-votre-remise&adjust_redirect=https%3A%2F%2Fjumia.ma%2Fmlp-felicitations-profitez-de-votre-remise';
-/* iOS : dans la WebView de l'app Jumia, iOS n'ouvre jamais un universal link
-   (lien Adjust https) depuis l'app elle-même — la WebView le charge et finit
-   sur le site web, où les bons ne marchent pas. On y utilise donc directement
-   le schéma de l'app (le même deep link que dans le lien Adjust).
-   WebView iOS = iPhone/iPad sans le jeton "Safari/" dans l'user agent
-   (Safari et Chrome iOS l'ont, eux gardent le lien Adjust). */
-const APP_DEEPLINK = 'jumia://ma/mlp-felicitations-profitez-de-votre-remise';
-function isIOSWebView(){
-  const ua = navigator.userAgent || '';
-  const iOS = /iPhone|iPad|iPod/.test(ua) ||
-              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOS
-  return iOS && !/Safari\//.test(ua);
-}
-function voucherHref(){ return isIOSWebView() ? APP_DEEPLINK : USE_VOUCHER_URL; }
+/* Lien "Utiliser mon bon" : même lien jumia.ma que la Roue de la Fortune.
+   L'app Jumia reconnaît ses propres liens jumia.ma et ouvre l'écran natif
+   (un lien Adjust ou jumia:// n'est pas routé pareil depuis la WebView iOS). */
+const USE_VOUCHER_URL = 'https://www.jumia.ma/mlp-felicitations-profitez-de-votre-remise/';
 const STORAGE_KEY  = 'jumia_mystery_app_plays';
 const SUSPENSE_MS  = 2000; // durée du roulement avant révélation
 /* Essais ILLIMITÉS : le jeu doit donner la sensation de gagner.
@@ -1041,7 +1008,7 @@ function applyPrize(prize, celebrate, opts){
       codeRow.classList.remove('code-in');
     }, 900);
   }
-  $('btnUse').href = voucherHref();
+  $('btnUse').href = USE_VOUCHER_URL;
   const n = unlockedVouchers().length;
   const bAll = $('btnAllVouchers');
   bAll.hidden = false;
@@ -1103,7 +1070,7 @@ function renderVouchersScreen(){
       track('copy_code', {source:'vouchers_screen'});
     });
   });
-  $('btnUseAll').href = voucherHref();
+  $('btnUseAll').href = USE_VOUCHER_URL;
   fitScreen();
 }
 let vouchersReturn = 'screen-play'; // écran d'origine pour le retour
@@ -1121,19 +1088,7 @@ $('btnVchBack').addEventListener('click', ()=>{
   const h = vouchersReturn === 'screen-result' ? $('rsTitle') : $('gameHint');
   if(h && h.focus) h.focus({preventScroll:true});
 });
-$('btnUseAll').addEventListener('click', ()=>{
-  track('use_click', {source:'vouchers_screen', deeplink:isIOSWebView()});
-  watchAppOpen();
-});
-/* WebView iOS hors app Jumia (Instagram…) : jumia:// ne fait rien. Si la page
-   est toujours visible après 2,5 s, on propose le lien Adjust (installer /
-   ouvrir l'app) au lieu de laisser le bouton sans effet. */
-function watchAppOpen(){
-  if(!isIOSWebView()) return;
-  setTimeout(()=>{
-    if(document.visibilityState === 'visible') $('appHint').classList.add('show');
-  }, 2500);
-}
+$('btnUseAll').addEventListener('click', ()=>track('use_click', {source:'vouchers_screen'}));
 /* ── Rejouer (illimité — le jeu doit donner envie de continuer) ── */
 $('btnReplay').addEventListener('click', ()=>{
   track('replay_click', {plays:loadPlays().length});
@@ -1167,12 +1122,7 @@ function fallbackCopy(text, cb){
   document.body.removeChild(ta);
   cb();
 }
-$('btnUse').addEventListener('click', ()=>{
-  track('use_click', {deeplink:isIOSWebView()});
-  watchAppOpen();
-});
-$('appHintLink').href = USE_VOUCHER_URL;
-$('appHintClose').addEventListener('click', ()=>$('appHint').classList.remove('show'));
+$('btnUse').addEventListener('click', ()=>track('use_click'));
 /* ── Confettis (couleurs de marque, léger, respecte reduced-motion) ── */
 function confetti(n){
   if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
