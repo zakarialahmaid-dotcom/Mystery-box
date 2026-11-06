@@ -675,7 +675,11 @@ const STORE_LINK   = 'https://www.jumia.ma/';           // fallback web
    L'app Jumia reconnaît ses propres liens jumia.ma et ouvre l'écran natif
    (un lien Adjust ou jumia:// n'est pas routé pareil depuis la WebView iOS). */
 const USE_VOUCHER_URL = 'https://www.jumia.ma/mlp-felicitations-profitez-de-votre-remise/';
-const STORAGE_KEY  = 'jumia_mystery_app_plays';
+/* Changer de clé = remise à zéro unique des bons sauvegardés sur chaque
+   téléphone (v2 : les anciens bons portaient le code de test NTEST2626).
+   Les anciennes clés sont supprimées au démarrage. */
+const STORAGE_KEY  = 'jumia_mystery_app_plays_v2';
+['jumia_mystery_app_plays'].forEach(k=>Store.del(k));
 const SUSPENSE_MS  = 2000; // durée du roulement avant révélation
 /* Essais ILLIMITÉS : le jeu doit donner la sensation de gagner.
    ⚠ PROD : garder un rate-limit serveur (ex. N jeux/min par client)
